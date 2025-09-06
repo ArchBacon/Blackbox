@@ -47,6 +47,7 @@ namespace blackbox
         std::unordered_set<std::type_index> contexts {};
         std::unordered_set<InputKey, InputKeyHash> activeKeys {};
         std::unordered_map<std::type_index, std::unique_ptr<InputAction>> actions {};
+        std::unordered_map<std::type_index, float2> lastActionsValue {};
         std::unordered_map<InputKey, std::shared_ptr<KeyBinding>, InputKeyHash> keybinds {};
 
     public:

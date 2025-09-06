@@ -34,8 +34,10 @@ namespace blackbox
         {
             value = mod->Execute(value);
         }
+        lastActionsValue[binds->actionType] = value;
 
         const auto& action = actions[binds->actionType];
+        action->duration = 0.0f;
         for (auto& callback : action->onStartedCallbacks)
         {
             callback(value);
@@ -72,7 +74,7 @@ namespace blackbox
         activeKeys.erase({event.key});
     }
     
-    void Input::OnTickEvent(const TickEvent)
+    void Input::OnTickEvent(const TickEvent event)
     {
         for (auto& key : activeKeys)
         {
@@ -87,17 +89,12 @@ namespace blackbox
                 continue;
             }
         
-            float2 value {1.0f, 0.0f}; // TODO: what is the default key value? this is correct for keyboard, but doesnt work for controllers
-            for (const auto& mod : binds->modifiers)
-            {
-                value = mod->Execute(value);
-            }
-        
             const auto& action = actions[binds->actionType];
+            action->duration += event.deltaTime;
             for (auto& callback : action->onTriggeredCallbacks)
             {
-                callback({value});
+                callback({lastActionsValue[binds->actionType]});
             }
-        } 
+        }
     }
 }
