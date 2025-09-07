@@ -49,7 +49,8 @@ namespace blackbox
         std::unordered_map<std::type_index, std::unique_ptr<InputAction>> actions {};
         std::unordered_map<std::type_index, float2> lastActionsValue {};
         std::unordered_map<InputKey, std::shared_ptr<KeyBinding>, InputKeyHash> keybinds {};
-
+        float2 mousePosition {};
+        
     public:
         Input(EventBus& eventbus);
         ~Input() = default;
@@ -71,9 +72,34 @@ namespace blackbox
         template <typename T>
         [[nodiscard]] InputAction& GetAction();
 
+        [[nodiscard]] float2 GetMousePosition() { return mousePosition; }
+
     private:
+        // Keyboard
         void OnKeyPressedEvent(KeyPressedEvent event);
         void OnKeyReleasedEvent(KeyReleasedEvent event);
+        
+        // Mouse
+        void OnButtonPressedEvent(MouseButtonPressedEvent event);
+        void OnButtonReleasedEvent(MouseButtonReleasedEvent event);
+        void OnMouseMovedEvent(MouseMotionEvent event);
+        void OnScrolledEvent(MouseWheelEvent event);
+        
+        // Controller
+        void OnFaceButtonPressedEvent(FaceButtonPressedEvent event);
+        void OnFaceButtonReleasedEvent(FaceButtonReleasedEvent event);
+        void OnShoulderPressedEvent(ShoulderPressedEvent event);
+        void OnShoulderReleasedEvent(ShoulderReleasedEvent event);
+        void OnTriggerEvent(TriggerEvent event);
+        void OnDPadPressedEvent(DPadPressedEvent event);
+        void OnDPadReleasedEvent(DPadReleasedEvent event);
+        void OnSpecialPressedEvent(SpecialPressedEvent event);
+        void OnSpecialReleasedEvent(SpecialReleasedEvent event);
+        void OnStickMotionEvent(StickMotionEvent event);
+        void OnStickPressedEvent(StickPressedEvent event);
+        void OnStickReleasedEvent(StickReleasedEvent event);
+
+        // General
         void OnTickEvent(TickEvent event);
     };
 

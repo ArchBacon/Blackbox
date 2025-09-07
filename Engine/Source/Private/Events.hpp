@@ -19,8 +19,8 @@ namespace blackbox
     // Mouse Input Events
     struct MouseButtonPressedEvent : Event { Mouse::Button button {}; };
     struct MouseButtonReleasedEvent : Event { Mouse::Button button {}; };
-    struct MouseMotionEvent : Event { float2 xy {}; };
-    struct MouseWheelEvent : Event { float y {}; };
+    struct MouseMotionEvent : Event { float2 direction {}; float2 position {}; };
+    struct MouseWheelEvent : Event { float direction {}; };
     
     // Controller Input Events
     struct FaceButtonPressedEvent : Event { Controller::FaceButton button {}; };
@@ -42,4 +42,6 @@ namespace blackbox
     struct WindowResizedEvent : Event { float2 windowSize {}; };
     struct WindowFocusLostEvent : Event {};
     struct WindowFocusGainedEvent : Event {};
+    struct WindowMouseEnterEvent : Event {};
+    struct WindowMouseLeaveEvent : Event {};
 }

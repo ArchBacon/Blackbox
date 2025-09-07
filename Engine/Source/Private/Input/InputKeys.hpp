@@ -4,9 +4,10 @@
 
 namespace blackbox
 {
-    enum class Keyboard : uint8_t
-    {
-        None, Any,
+    // TODO: Any Key
+    
+    enum class Keyboard : uint8_t {
+        None,
         A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
         Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
         F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
@@ -17,14 +18,16 @@ namespace blackbox
         Home, End, PageUp, PageDown, Insert,
         Semicolon, Equals, Comma, Minus, Period, Slash,
         Grave, LeftBracket, Backslash, RightBracket, Apostrophe,
-        PrintScreen, Pause, Menu,
+        PrintScreen, Pause, Menu, ContextMenu,
+        KP_Num0, KP_Num1, KP_Num2, KP_Num3, KP_Num4, KP_Num5, KP_Num6, KP_Num7, KP_Num8, KP_Num9,
+        KP_Divide, KP_Multiply, KP_Minus, KP_Plus, KP_Enter, KP_Period,
     };
 
     namespace Mouse
     {
-        enum class Button : uint8_t { Left, Right, Middle, Wheel, X1, X2 };
-        struct Motion {};
-        struct Wheel {};
+        enum class Button : uint8_t { None, Left, Right, Middle, X1, X2 };
+        enum class Motion { XY };
+        enum class Wheel { Vertical };
     }
 
     namespace Controller

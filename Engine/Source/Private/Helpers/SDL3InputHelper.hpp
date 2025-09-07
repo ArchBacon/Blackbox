@@ -1,7 +1,6 @@
 ﻿#pragma once
-#include <optional>
-#include <SDL3/SDL_scancode.h>
 
+#include <SDL3/SDL_scancode.h>
 #include "Input/InputKeys.hpp"
 
 namespace blackbox
@@ -47,6 +46,17 @@ namespace blackbox
             case SDL_SCANCODE_7: return Keyboard::Num7;
             case SDL_SCANCODE_8: return Keyboard::Num8;
             case SDL_SCANCODE_9: return Keyboard::Num9;
+
+            case SDL_SCANCODE_KP_0: return Keyboard::KP_Num0;
+            case SDL_SCANCODE_KP_1: return Keyboard::KP_Num1;
+            case SDL_SCANCODE_KP_2: return Keyboard::KP_Num2;
+            case SDL_SCANCODE_KP_3: return Keyboard::KP_Num3;
+            case SDL_SCANCODE_KP_4: return Keyboard::KP_Num4;
+            case SDL_SCANCODE_KP_5: return Keyboard::KP_Num5;
+            case SDL_SCANCODE_KP_6: return Keyboard::KP_Num6;
+            case SDL_SCANCODE_KP_7: return Keyboard::KP_Num7;
+            case SDL_SCANCODE_KP_8: return Keyboard::KP_Num8;
+            case SDL_SCANCODE_KP_9: return Keyboard::KP_Num9;
             
             case SDL_SCANCODE_F1: return Keyboard::F1;
             case SDL_SCANCODE_F2: return Keyboard::F2;
@@ -60,6 +70,13 @@ namespace blackbox
             case SDL_SCANCODE_F10: return Keyboard::F10;
             case SDL_SCANCODE_F11: return Keyboard::F11;
             case SDL_SCANCODE_F12: return Keyboard::F12;
+
+            case SDL_SCANCODE_KP_DIVIDE: return Keyboard::KP_Divide;
+            case SDL_SCANCODE_KP_MULTIPLY: return Keyboard::KP_Multiply;
+            case SDL_SCANCODE_KP_MINUS: return Keyboard::KP_Minus;
+            case SDL_SCANCODE_KP_PLUS: return Keyboard::KP_Plus;
+            case SDL_SCANCODE_KP_ENTER: return Keyboard::KP_Enter;
+            case SDL_SCANCODE_KP_PERIOD: return Keyboard::KP_Period;
             
             case SDL_SCANCODE_LEFT: return Keyboard::Left;
             case SDL_SCANCODE_RIGHT: return Keyboard::Right;
@@ -81,7 +98,8 @@ namespace blackbox
             case SDL_SCANCODE_RALT: return Keyboard::RightAlt;
             case SDL_SCANCODE_LGUI: return Keyboard::LeftSuper;
             case SDL_SCANCODE_RGUI: return Keyboard::RightSuper;
-            
+            case SDL_SCANCODE_APPLICATION: return Keyboard::ContextMenu;
+
             case SDL_SCANCODE_CAPSLOCK: return Keyboard::CapsLock;
             case SDL_SCANCODE_NUMLOCKCLEAR: return Keyboard::NumLock;
             case SDL_SCANCODE_SCROLLLOCK: return Keyboard::ScrollLock;
@@ -110,6 +128,19 @@ namespace blackbox
             case SDL_SCANCODE_MENU: return Keyboard::Menu;
             
             default: return Keyboard::None;
+        }
+    }
+
+    constexpr Mouse::Button MapSDLMouseButton(const uint8_t button) noexcept
+    {
+        switch (button)
+        {
+            case SDL_BUTTON_LEFT: return Mouse::Button::Left;
+            case SDL_BUTTON_RIGHT: return Mouse::Button::Right;
+            case SDL_BUTTON_MIDDLE: return Mouse::Button::Middle;
+            case SDL_BUTTON_X1: return Mouse::Button::X1;
+            case SDL_BUTTON_X2: return Mouse::Button::X2;
+            default: return Mouse::Button::None;
         }
     }
 }
