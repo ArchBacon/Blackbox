@@ -51,7 +51,7 @@ namespace blackbox
 
         if (!actions.contains(actionName))
         {
-            LogEngine->Warn("Action `{}` not registered on context `{}`.", actionName, this->name);
+            LogInput->Warn("Action `{}` not registered on context `{}`.", actionName, this->name);
         }
 
         return std::get<InputAction<T>>(actions[actionName]);

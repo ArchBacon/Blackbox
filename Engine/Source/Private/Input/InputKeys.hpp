@@ -36,7 +36,7 @@ namespace blackbox
         enum class Shoulder : uint8_t { Left, Right };
         enum class Trigger : uint8_t { Left, Right };
         enum class DPad : uint8_t { Up, Down, Left, Right };
-        enum class Special : uint8_t { Left, Right };
+        enum class Special : uint8_t { Share, Options };
         namespace Stick
         {
             enum class Motion : uint8_t { Left, Right };

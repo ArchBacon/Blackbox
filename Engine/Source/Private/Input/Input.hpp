@@ -109,7 +109,7 @@ namespace blackbox
         const auto type = std::type_index(typeid(T));
         if (contexts.contains(type))
         {
-            LogEngine->Warn("Context `{}` is already active.", type.name());
+            LogInput->Warn("Context `{}` is already active.", type.name());
             return;
         }
         
@@ -119,7 +119,7 @@ namespace blackbox
 
         if (!contexts.contains(type))
         {
-            LogEngine->Warn("Context `{}` couldn't be added.", type.name());
+            LogInput->Warn("Context `{}` couldn't be added.", type.name());
         }
     }
 
@@ -129,7 +129,7 @@ namespace blackbox
         const auto type = std::type_index(typeid(T));
         if (!contexts.contains(type))
         {
-            LogEngine->Warn("Context `{}` is not active.", type.name());
+            LogInput->Warn("Context `{}` is not active.", type.name());
             return;
         }
         

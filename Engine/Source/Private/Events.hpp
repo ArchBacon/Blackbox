@@ -32,9 +32,11 @@ namespace blackbox
     struct DPadReleasedEvent : Event { Controller::DPad button {}; };
     struct SpecialPressedEvent : Event { Controller::Special button {}; };
     struct SpecialReleasedEvent : Event { Controller::Special button {}; };
-    struct StickMotionEvent : Event { Controller::Stick::Motion xy {}; };
+    struct StickMotionEvent : Event { Controller::Stick::Motion stick {}; float2 value {}; };
     struct StickPressedEvent : Event { Controller::Stick::Pressed stick {}; };
     struct StickReleasedEvent : Event { Controller::Stick::Pressed stick {}; };
+    struct ControllerAddedEvent : Event { uint32_t device {}; };
+    struct ControllerRemovedEvent : Event { uint32_t device {}; };
     
     // Window Events
     struct WindowMinimizedEvent : Event {};

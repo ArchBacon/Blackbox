@@ -16,9 +16,11 @@ namespace blackbox
         {
             switch (static_cast<SDL_EventType>(e.type))
             {
+            // Engine events //
             case SDL_EVENT_QUIT:
                 eventbus.Broadcast(ShutdownEvent {});
                 break;
+            // Window events //
             case SDL_EVENT_WINDOW_MINIMIZED:
                 eventbus.Broadcast(WindowMinimizedEvent {});
                 break;
@@ -40,6 +42,7 @@ namespace blackbox
             case SDL_EVENT_WINDOW_MOUSE_LEAVE:
                 eventbus.Broadcast(WindowMouseLeaveEvent {});
                 break;
+            // Keyboard events //
             case SDL_EVENT_KEY_DOWN:
                 e.key.repeat
                     ? eventbus.Broadcast(KeyRepeatEvent {.key = MapSDLKeyboard(e.key.scancode) })
@@ -48,6 +51,7 @@ namespace blackbox
             case SDL_EVENT_KEY_UP:
                 eventbus.Broadcast(KeyReleasedEvent {.key = MapSDLKeyboard(e.key.scancode) });
                 break;
+            // Mouse events //
             case SDL_EVENT_MOUSE_MOTION:
                 eventbus.Broadcast(MouseMotionEvent {.direction = {e.motion.xrel, e.motion.yrel}, .position = {e.motion.x, e.motion.y}  });
                 break;
@@ -65,6 +69,138 @@ namespace blackbox
                     eventbus.Broadcast(MouseWheelEvent {.direction = e.wheel.y});
                 }
                 break;
+            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                switch (e.gbutton.button)
+                {
+                    // Face buttons //
+                    case SDL_GAMEPAD_BUTTON_NORTH:
+                        eventbus.Broadcast(FaceButtonPressedEvent {.button = Controller::FaceButton::Up});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_EAST:
+                        eventbus.Broadcast(FaceButtonPressedEvent {.button = Controller::FaceButton::Right});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_SOUTH:
+                        eventbus.Broadcast(FaceButtonPressedEvent {.button = Controller::FaceButton::Down});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_WEST:
+                        eventbus.Broadcast(FaceButtonPressedEvent {.button = Controller::FaceButton::Left});
+                        break;
+                    // Shoulders //
+                    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
+                        eventbus.Broadcast(ShoulderPressedEvent {.shoulder = Controller::Shoulder::Left});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
+                        eventbus.Broadcast(ShoulderPressedEvent {.shoulder = Controller::Shoulder::Right});
+                        break;
+                    // DPad //
+                    case SDL_GAMEPAD_BUTTON_DPAD_UP:
+                        eventbus.Broadcast(DPadPressedEvent {.button = Controller::DPad::Up});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+                        eventbus.Broadcast(DPadPressedEvent {.button = Controller::DPad::Right});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+                        eventbus.Broadcast(DPadPressedEvent {.button = Controller::DPad::Down});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+                        eventbus.Broadcast(DPadPressedEvent {.button = Controller::DPad::Left});
+                    break;
+                    // Specials //
+                    case SDL_GAMEPAD_BUTTON_START:
+                        eventbus.Broadcast(SpecialPressedEvent {.button = Controller::Special::Options});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_BACK:
+                        eventbus.Broadcast(SpecialPressedEvent {.button = Controller::Special::Share});
+                        break;
+                    // Stick buttons //
+                    case SDL_GAMEPAD_BUTTON_LEFT_STICK:
+                        eventbus.Broadcast(StickPressedEvent {.stick = Controller::Stick::Pressed::Left});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_RIGHT_STICK:
+                        eventbus.Broadcast(StickPressedEvent {.stick = Controller::Stick::Pressed::Right});
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case SDL_EVENT_GAMEPAD_BUTTON_UP:
+                switch (e.gbutton.button)
+                {
+                    // Face buttons //
+                    case SDL_GAMEPAD_BUTTON_NORTH:
+                        eventbus.Broadcast(FaceButtonReleasedEvent {.button = Controller::FaceButton::Up});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_EAST:
+                        eventbus.Broadcast(FaceButtonReleasedEvent {.button = Controller::FaceButton::Right});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_SOUTH:
+                        eventbus.Broadcast(FaceButtonReleasedEvent {.button = Controller::FaceButton::Down});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_WEST:
+                        eventbus.Broadcast(FaceButtonReleasedEvent {.button = Controller::FaceButton::Left});
+                        break;
+                    // Shoulders //
+                    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
+                        eventbus.Broadcast(ShoulderReleasedEvent {.shoulder = Controller::Shoulder::Left});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
+                        eventbus.Broadcast(ShoulderReleasedEvent {.shoulder = Controller::Shoulder::Right});
+                        break;
+                    // DPad //
+                    case SDL_GAMEPAD_BUTTON_DPAD_UP:
+                        eventbus.Broadcast(DPadReleasedEvent {.button = Controller::DPad::Up});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+                        eventbus.Broadcast(DPadReleasedEvent {.button = Controller::DPad::Right});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+                        eventbus.Broadcast(DPadReleasedEvent {.button = Controller::DPad::Down});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+                        eventbus.Broadcast(DPadReleasedEvent {.button = Controller::DPad::Left});
+                    break;
+                    // Specials //
+                    case SDL_GAMEPAD_BUTTON_START:
+                        eventbus.Broadcast(SpecialReleasedEvent {.button = Controller::Special::Options});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_BACK:
+                        eventbus.Broadcast(SpecialReleasedEvent {.button = Controller::Special::Share});
+                        break;
+                    // Stick buttons //
+                    case SDL_GAMEPAD_BUTTON_LEFT_STICK:
+                        eventbus.Broadcast(StickReleasedEvent {.stick = Controller::Stick::Pressed::Left});
+                        break;
+                    case SDL_GAMEPAD_BUTTON_RIGHT_STICK:
+                        eventbus.Broadcast(StickReleasedEvent {.stick = Controller::Stick::Pressed::Right});
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                float value = glm::clamp((static_cast<float>(e.gaxis.value) / 32767.f), -1.f, 1.0f);
+                switch (e.gaxis.axis)
+                {
+                    // Triggers //
+                    case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Left, .value = value});
+                        break;
+                    case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
+                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Right, .value = value});
+                        break;
+                    // Sticks //
+                    case SDL_GAMEPAD_AXIS_LEFTX:
+                    case SDL_GAMEPAD_AXIS_LEFTY: // TODO: Combine X & Y values
+                        eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Left, .value});
+                        break;
+                    case SDL_GAMEPAD_AXIS_RIGHTX:
+                    case SDL_GAMEPAD_AXIS_RIGHTY: // TODO: Combine X & Y values
+                    eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Right, .value});
+                        break;
+                    default:
+                        break;
+                }
+                break;
             // Ignored events //
             case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             case SDL_EVENT_WINDOW_SHOWN:
@@ -74,7 +210,7 @@ namespace blackbox
             case SDL_EVENT_WINDOW_MOVED:
                 break;
             default:
-                LogEngine->Warn("Event {} not mapped.", to_string(e));
+                LogInput->Warn("Event {} not mapped.", to_string(e));
                 break;
             }
         }

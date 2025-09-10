@@ -196,8 +196,8 @@ namespace blackbox
     {
         switch (e)
         {
-        case Controller::Special::Left: return "Share";
-        case Controller::Special::Right: return "Options";
+        case Controller::Special::Share: return "Share";
+        case Controller::Special::Options: return "Options";
         default: return "unknown";
         }
     }
