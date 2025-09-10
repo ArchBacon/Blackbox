@@ -14,6 +14,8 @@ namespace blackbox
     public:
         static void Broadcast(SDL_Event& e, EventBus& eventbus)
         {
+            const float axisValue = glm::clamp((static_cast<float>(e.gaxis.value) / 32767.f), -1.f, 1.0f);
+            
             switch (static_cast<SDL_EventType>(e.type))
             {
             // Engine events //
@@ -69,6 +71,7 @@ namespace blackbox
                     eventbus.Broadcast(MouseWheelEvent {.direction = e.wheel.y});
                 }
                 break;
+            // Controller //
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
                 switch (e.gbutton.button)
                 {
@@ -178,28 +181,41 @@ namespace blackbox
                 }
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                float value = glm::clamp((static_cast<float>(e.gaxis.value) / 32767.f), -1.f, 1.0f);
+                float2 axisLeft {};
+                float2 axisRight {};
                 switch (e.gaxis.axis)
                 {
                     // Triggers //
                     case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Left, .value = value});
+                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Left, .value = axisValue});
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Right, .value = value});
+                        eventbus.Broadcast(TriggerEvent {.trigger = Controller::Trigger::Right, .value = axisValue});
                         break;
                     // Sticks //
                     case SDL_GAMEPAD_AXIS_LEFTX:
-                    case SDL_GAMEPAD_AXIS_LEFTY: // TODO: Combine X & Y values
-                        eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Left, .value});
+                        axisLeft.x = axisValue;
+                        break;
+                    case SDL_GAMEPAD_AXIS_LEFTY:
+                        axisLeft.y = axisValue;
                         break;
                     case SDL_GAMEPAD_AXIS_RIGHTX:
-                    case SDL_GAMEPAD_AXIS_RIGHTY: // TODO: Combine X & Y values
-                    eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Right, .value});
+                        axisRight.x = axisValue;
+                        break;
+                    case SDL_GAMEPAD_AXIS_RIGHTY:
+                        axisRight.y = axisValue;
                         break;
                     default:
                         break;
                 }
+                eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Left, .value = axisLeft});
+                eventbus.Broadcast(StickMotionEvent {.stick = Controller::Stick::Motion::Right, .value = axisRight});
+                break;
+            case SDL_EVENT_GAMEPAD_ADDED:
+                eventbus.Broadcast(ControllerAddedEvent {.device = e.gdevice.which});
+                break;
+            case SDL_EVENT_GAMEPAD_REMOVED:
+                eventbus.Broadcast(ControllerRemovedEvent {.device = e.gdevice.which});
                 break;
             // Ignored events //
             case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
@@ -208,6 +224,14 @@ namespace blackbox
             case SDL_EVENT_WINDOW_EXPOSED:
             case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
             case SDL_EVENT_WINDOW_MOVED:
+            case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+            case SDL_EVENT_JOYSTICK_BUTTON_UP:
+            case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+            case SDL_EVENT_JOYSTICK_UPDATE_COMPLETE:
+            case SDL_EVENT_GAMEPAD_UPDATE_COMPLETE:
+            case SDL_EVENT_JOYSTICK_HAT_MOTION:
+            case SDL_EVENT_JOYSTICK_BATTERY_UPDATED:
+            case SDL_EVENT_JOYSTICK_ADDED:
                 break;
             default:
                 LogInput->Warn("Event {} not mapped.", to_string(e));

@@ -10,6 +10,23 @@ namespace blackbox
     Input::Input(EventBus& eventbus)
         : eventbus(eventbus)
     {
+        // Force all joysticks to be treated as gamepads if possible
+        // Without this, Joystick events are triggered, but not gamepad events
+        auto* gamepads = SDL_GetGamepads(nullptr);
+        if (gamepads) {
+            int count = 0;
+            while (gamepads[count] != 0) count++;
+    
+            for (int i = 0; i < count; i++) {
+                SDL_Gamepad* gamepad = SDL_OpenGamepad(gamepads[i]);
+                if (gamepad) {
+                    LogEngine->Info("Opened gamepad: {}", SDL_GetGamepadName(gamepad));
+                    // Keep it open - don't close it here
+                }
+            }
+            SDL_free(gamepads);
+        }
+        
         // Keyboard
         eventbus.Subscribe<KeyPressedEvent>(this, &Input::OnKeyPressedEvent);
         eventbus.Subscribe<KeyReleasedEvent>(this, &Input::OnKeyReleasedEvent);
@@ -19,6 +36,20 @@ namespace blackbox
         eventbus.Subscribe<MouseButtonReleasedEvent>(this, &Input::OnButtonReleasedEvent);
         eventbus.Subscribe<MouseMotionEvent>(this, &Input::OnMouseMovedEvent);
         eventbus.Subscribe<MouseWheelEvent>(this, &Input::OnScrolledEvent);
+
+        // Controller
+        eventbus.Subscribe<FaceButtonPressedEvent>(this, &Input::OnFaceButtonPressedEvent);
+        eventbus.Subscribe<FaceButtonReleasedEvent>(this, &Input::OnFaceButtonReleasedEvent);
+        eventbus.Subscribe<ShoulderPressedEvent>(this, &Input::OnShoulderPressedEvent);
+        eventbus.Subscribe<ShoulderReleasedEvent>(this, &Input::OnShoulderReleasedEvent);
+        eventbus.Subscribe<TriggerEvent>(this, &Input::OnTriggerEvent);
+        eventbus.Subscribe<DPadPressedEvent>(this, &Input::OnDPadPressedEvent);
+        eventbus.Subscribe<DPadReleasedEvent>(this, &Input::OnDPadReleasedEvent);
+        eventbus.Subscribe<SpecialPressedEvent>(this, &Input::OnSpecialPressedEvent);
+        eventbus.Subscribe<SpecialReleasedEvent>(this, &Input::OnSpecialReleasedEvent);
+        eventbus.Subscribe<StickMotionEvent>(this, &Input::OnStickMotionEvent);
+        eventbus.Subscribe<StickPressedEvent>(this, &Input::OnStickPressedEvent);
+        eventbus.Subscribe<StickReleasedEvent>(this, &Input::OnStickReleasedEvent);
         
         eventbus.Subscribe<TickEvent>(this, &Input::OnTickEvent);
     }

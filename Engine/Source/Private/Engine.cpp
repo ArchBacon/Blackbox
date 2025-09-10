@@ -17,7 +17,7 @@ void blackbox::BlackboxEngine::Initialize()
 {
     LogEngine->Trace("Initializing Engine...");
 
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD);
     
     // Populate the DI container
     container = std::make_unique<Container>();
