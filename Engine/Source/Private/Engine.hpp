@@ -25,6 +25,20 @@ namespace blackbox
             },
         }) {}
     };
+
+    struct TestAction {};
+    struct TestContext final : InputMappingContext<TestContext>
+    {
+        // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+        TestContext() : InputMappingContext({
+            InputMapping<TestAction> {
+                {Keyboard::W},
+                {Keyboard::S, Negate{}},
+                {Keyboard::D, Swizzle{}},
+                {Keyboard::A, Swizzle{}, Negate{}},
+            },
+        }) {}
+    };
     
     class BlackboxEngine
     {
@@ -56,6 +70,9 @@ namespace blackbox
         void StartRendering(const Event&) { stopRendering = false; }
 
         void OnCloseAction(InputValue) { RequestShutdown({}); }
+        void TestActionStarted(InputValue value) { LogInput->Info("Started: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
+        void TestActionEnded(InputValue value) { LogInput->Info("Ended: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
+        void TestActionTriggered(InputValue value) { LogInput->Info("Triggered: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
     };
 }
 

@@ -106,7 +106,7 @@ namespace blackbox
         case Keyboard::KP_Num7: return "KP_Num7";
         case Keyboard::KP_Num8: return "KP_Num8";
         case Keyboard::KP_Num9: return "KP_Num9";
-        case Keyboard::KP_Divide: return "KP_Slash";
+        case Keyboard::KP_Divide: return "KP_Divide";
         case Keyboard::KP_Multiply: return "KP_Multiply";
         case Keyboard::KP_Minus: return "KP_Minus";
         case Keyboard::KP_Plus: return "KP_Plus";

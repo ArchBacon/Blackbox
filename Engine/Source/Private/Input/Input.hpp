@@ -101,6 +101,8 @@ namespace blackbox
 
         // General
         void OnTickEvent(TickEvent event);
+        void HandlePressedInput(float2 value, InputKey key);
+        void HandleReleaseInput(float2 value, InputKey key);
     };
 
     template <InputMappingContextType T>

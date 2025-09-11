@@ -62,61 +62,16 @@ namespace blackbox
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_KEYBOARD)
             LogInput->Info("Pressed Keyboard key: {}", to_string(event.key));
         #endif
-        
-        if (!keybinds.contains({event.key}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{event.key}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        float2 value {1.0f, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
 
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert({event.key});
+        HandlePressedInput({1.0f, 0.0f}, {event.key});
     }
     void Input::OnKeyReleasedEvent(const KeyReleasedEvent event)
     {
-        if (!keybinds.contains({event.key}))
-        {
-            return;
-        }
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_KEYBOARD)
+        LogInput->Info("Released Keyboard key: {}", to_string(event.key));
+        #endif
         
-        const auto binds = keybinds[{event.key}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return;
-        }
-        
-        float2 value {0.0f, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
-        
-        const auto& action = actions[binds->actionType];
-        for (auto& callback : action->onEndedCallbacks)
-        {
-            callback({value});
-        }
-        
-        activeKeys.erase({event.key});
+        HandleReleaseInput({0.0f, 0.0f}, {event.key});
     }
 
     // Mouse
@@ -125,176 +80,100 @@ namespace blackbox
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
             LogInput->Info("Pressed mouse button: {}", to_string(event.button));
         #endif
-        
-        if (!keybinds.contains({event.button}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{event.button}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        float2 value {1.0f, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
 
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert({event.button});
+        HandlePressedInput({1.0f, 0.0f}, {event.button});
     }
     void Input::OnButtonReleasedEvent(const MouseButtonReleasedEvent event)
     {
-        if (!keybinds.contains({event.button}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{event.button}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return;
-        }
-        
-        float2 value {0.0f, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
-        
-        const auto& action = actions[binds->actionType];
-        for (auto& callback : action->onEndedCallbacks)
-        {
-            callback({value});
-        }
-        
-        activeKeys.erase({event.button});
+        HandleReleaseInput({0.0f, 0.0f}, {event.button});
     }
     void Input::OnMouseMovedEvent(const MouseMotionEvent event)
     {
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
             LogInput->Info("Mouse Moved: ({}, {}) to ({}, {})", event.direction.x, event.direction.y, event.position.x, event.position.y);
         #endif
-
+        
         mousePosition = event.position;
-        
-        if (!keybinds.contains({Mouse::Motion::XY}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{Mouse::Motion::XY}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        float2 value = event.direction;
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
-
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert({Mouse::Motion::XY});
+        HandlePressedInput(event.direction, {Mouse::Motion::XY});
     }
     void Input::OnScrolledEvent(const MouseWheelEvent event)
     {
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
             LogInput->Info("Scrolled: {}", event.direction);
         #endif
-        
-        if (!keybinds.contains({Mouse::Wheel::Vertical}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{Mouse::Wheel::Vertical}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        float2 value {event.direction, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
 
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert({Mouse::Wheel::Vertical});
+        HandlePressedInput({event.direction, 0.0f}, {Mouse::Wheel::Vertical});
     }
 
     // Controller
     void Input::OnFaceButtonPressedEvent(FaceButtonPressedEvent event)
     {
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
+            LogInput->Info("Pressed controller button: {}", to_string(event.button));
+        #endif
+
+        HandlePressedInput({1.0f, 0.0f}, {event.button});
+    }
+    void Input::OnFaceButtonReleasedEvent(FaceButtonReleasedEvent event)
+    {
+        HandleReleaseInput({1.0f, 0.0f}, {event.button});
+    }
+    void Input::OnShoulderPressedEvent(ShoulderPressedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
+        LogInput->Info("Pressed controller button: {}", to_string(event.shoulder));
+        #endif
+
+        HandlePressedInput({1.0f, 0.0f}, {event.shoulder});
+    }
+    void Input::OnShoulderReleasedEvent(ShoulderReleasedEvent event)
+    {
+        HandleReleaseInput({0.0f, 0.0f}, {event.shoulder});
+    }
+    void Input::OnTriggerEvent(TriggerEvent event)
+    {
+        HandlePressedInput({event.value, 0.0f}, {event.trigger});
+    }
+    void Input::OnDPadPressedEvent(DPadPressedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
         LogInput->Info("Pressed controller button: {}", to_string(event.button));
         #endif
-        
-        if (!keybinds.contains({event.button}))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[{event.button}];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        float2 value {1.0f, 0.0f};
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
 
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert({event.button});
+        HandlePressedInput({1.0f, 0.0f}, {event.button});
     }
-    void Input::OnFaceButtonReleasedEvent(FaceButtonReleasedEvent event) {}
-    void Input::OnShoulderPressedEvent(ShoulderPressedEvent event) {}
-    void Input::OnShoulderReleasedEvent(ShoulderReleasedEvent event) {}
-    void Input::OnTriggerEvent(TriggerEvent event) {}
-    void Input::OnDPadPressedEvent(DPadPressedEvent event) {}
-    void Input::OnDPadReleasedEvent(DPadReleasedEvent event) {}
-    void Input::OnSpecialPressedEvent(SpecialPressedEvent event) {}
-    void Input::OnSpecialReleasedEvent(SpecialReleasedEvent event) {}
-    void Input::OnStickMotionEvent(StickMotionEvent event) {}
-    void Input::OnStickPressedEvent(StickPressedEvent event) {}
-    void Input::OnStickReleasedEvent(StickReleasedEvent event) {}
+    void Input::OnDPadReleasedEvent(DPadReleasedEvent event)
+    {
+        HandlePressedInput({0.0f, 0.0f}, {event.button});
+    }
+    void Input::OnSpecialPressedEvent(SpecialPressedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
+        LogInput->Info("Pressed controller button: {}", to_string(event.button));
+        #endif
+
+        HandlePressedInput({1.0f, 0.0f}, {event.button});
+    }
+    void Input::OnSpecialReleasedEvent(SpecialReleasedEvent event)
+    {
+        HandlePressedInput({0.0f, 0.0f}, {event.button});
+    }
+    void Input::OnStickMotionEvent(StickMotionEvent event)
+    {
+        HandlePressedInput(event.value, {event.stick});
+    }
+    void Input::OnStickPressedEvent(StickPressedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
+        LogInput->Info("Pressed controller button: {}", to_string(event.stick));
+        #endif
+
+        HandlePressedInput({1.0f, 0.0f}, {event.stick});
+    }
+    void Input::OnStickReleasedEvent(StickReleasedEvent event)
+    {
+        HandlePressedInput({0.0f, 0.0f}, {event.stick});
+    }
 
     // General
     void Input::OnTickEvent(const TickEvent event)
@@ -319,5 +198,61 @@ namespace blackbox
                 callback({lastActionsValue[binds->actionType]});
             }
         }
+    }
+
+    void Input::HandlePressedInput(float2 value, const InputKey key)
+    {
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+        
+        const auto binds = keybinds[key];
+        if (!contexts.contains(binds->contextType))
+        {
+            return; // Key does not trigger if the corresponding context isn't active
+        }
+        
+        for (const auto& mod : binds->modifiers)
+        {
+            value = mod->Execute(value);
+        }
+        lastActionsValue[binds->actionType] = value;
+
+        const auto& action = actions[binds->actionType];
+        action->duration = 0.0f;
+        for (auto& callback : action->onStartedCallbacks)
+        {
+            callback(value);
+        }
+
+        activeKeys.insert(key);
+    }
+    void Input::HandleReleaseInput(float2 value, const InputKey key)
+    {
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+        
+        const auto binds = keybinds[key];
+        if (!contexts.contains(binds->contextType))
+        {
+            return;
+        }
+        
+        for (const auto& mod : binds->modifiers)
+        {
+            value = mod->Execute(value);
+        }
+        lastActionsValue[binds->actionType] = value;
+        
+        const auto& action = actions[binds->actionType];
+        for (auto& callback : action->onEndedCallbacks)
+        {
+            callback(value);
+        }
+        
+        activeKeys.erase(key);
     }
 }
