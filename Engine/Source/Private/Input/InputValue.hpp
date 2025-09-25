@@ -22,7 +22,7 @@ namespace blackbox
 
         if constexpr (std::is_same_v<T, bool>)
         {
-            return value.x > 0.0f; // true if non-zero or positive
+            return value.x > 0.0f; // true if positive non-zero
         }
         else if constexpr (std::is_same_v<T, float>)
         {
