@@ -66,7 +66,7 @@ namespace blackbox
         }
     };
 
-    const char* to_string(const Keyboard e)
+    inline const char* to_string(const Keyboard e)
     {
         switch (e)
         {
@@ -179,7 +179,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Mouse::Button e)
+    inline const char* to_string(const Mouse::Button e)
     {
         switch (e)
         {
@@ -192,7 +192,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Mouse::Motion e)
+    inline const char* to_string(const Mouse::Motion e)
     {
         switch (e)
         {
@@ -201,7 +201,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Mouse::Wheel e)
+    inline const char* to_string(const Mouse::Wheel e)
     {
         switch (e)
         {
@@ -210,7 +210,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::FaceButton e)
+    inline const char* to_string(const Controller::FaceButton e)
     {
         switch (e)
         {
@@ -222,7 +222,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::Shoulder e)
+    inline const char* to_string(const Controller::Shoulder e)
     {
         switch (e)
         {
@@ -232,7 +232,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::Trigger e)
+    inline const char* to_string(const Controller::Trigger e)
     {
         switch (e)
         {
@@ -242,7 +242,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::DPad e)
+    inline const char* to_string(const Controller::DPad e)
     {
         switch (e)
         {
@@ -254,7 +254,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::Special e)
+    inline const char* to_string(const Controller::Special e)
     {
         switch (e)
         {
@@ -264,7 +264,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::Stick::Motion e)
+    inline const char* to_string(const Controller::Stick::Motion e)
     {
         switch (e)
         {
@@ -274,7 +274,7 @@ namespace blackbox
         }
     }
 
-    const char* to_string(const Controller::Stick::Pressed e)
+    inline const char* to_string(const Controller::Stick::Pressed e)
     {
         switch (e)
         {
