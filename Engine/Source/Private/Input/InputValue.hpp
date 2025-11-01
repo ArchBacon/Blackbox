@@ -7,9 +7,12 @@ namespace blackbox
     class InputValue
     {
         float2 value {0.0f, 0.0f};
+        float duration {0.0f};
 
     public:
-        InputValue(const float2 value) : value(value) {}
+        InputValue(const float2 value)
+            : value(glm::clamp(value, {-1.f, -1.f}, {1.f, 1.f}))
+        {}
         
         template <typename T>
         T Get();

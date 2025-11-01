@@ -25,9 +25,9 @@ namespace blackbox
      
         struct SteeringAction {};
         struct ThrottleAction {};
-        struct IMC_Driving final : InputMappingContext<IMC_Driving>
+        struct DrivingInputContext final : InputMappingContext<DrivingInputContext>
         {
-            IMC_Driving() : InputMappingContext({
+            DrivingInputContext() : InputMappingContext({
                 InputMapping<SteeringAction> {
                     {Keyboard::A, Swizzle{}, Negate{}},
                     {Keyboard::D, Swizzle{}},
@@ -42,15 +42,22 @@ namespace blackbox
     */
     class Input
     {
+        struct KeyState
+        {
+            float2 value {0.0f, 0.0f};
+            // float duration {0.0f};
+        };
+        
         EventBus& eventbus;
         
         std::unordered_set<std::type_index> contexts {};
-        std::unordered_set<InputKey, InputKeyHash> activeKeys {};
         std::unordered_map<std::type_index, std::unique_ptr<InputAction>> actions {};
-        std::unordered_map<std::type_index, float2> lastActionsValue {};
-        std::unordered_map<InputKey, std::shared_ptr<KeyBinding>, InputKeyHash> keybinds {};
+        std::unordered_map<InputKey, std::vector<std::shared_ptr<KeyBinding>>, InputKeyHash> keybinds {}; // all bindings on contexts with the input key
+        std::unordered_map<InputKey, KeyState, InputKeyHash> keyStates {}; // last known values of keys
+        std::unordered_set<InputKey, InputKeyHash> pressedKeys {}; // keys currently pressed
+        std::unordered_map<std::type_index, std::vector<InputKey>> actionKeys {}; // keys that belong to an action
         float2 mousePosition {};
-        
+    
     public:
         Input(EventBus& eventbus);
         ~Input() = default;
@@ -101,8 +108,6 @@ namespace blackbox
 
         // General
         void OnTickEvent(TickEvent event);
-        void HandlePressedInput(float2 value, InputKey key);
-        void HandleReleaseInput(float2 value, InputKey key);
     };
 
     template <InputMappingContextType T>
@@ -117,12 +122,22 @@ namespace blackbox
         
         InputMappingContext context = T();
         contexts.insert(type);
-        keybinds.merge(context.keybinds);
-
-        if (!contexts.contains(type))
+        
+        // add intput keys in the arrays that belong to the actions
+        for (auto keybind : context.keybinds)
         {
-            LogInput->Warn("Context `{}` couldn't be added.", type.name());
+            for (auto keyBinding : keybind.second)
+            {
+                auto it = std::ranges::find(actionKeys[keyBinding->actionType], keybind.first);
+
+                if (it == actionKeys[keyBinding->actionType].end())
+                {
+                    actionKeys[keyBinding->actionType].push_back(keybind.first);
+                }
+            } 
         }
+
+        keybinds.merge(context.keybinds);
     }
 
     template <InputMappingContextType T>

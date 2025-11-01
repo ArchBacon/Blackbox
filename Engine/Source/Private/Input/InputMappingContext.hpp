@@ -11,7 +11,7 @@ namespace blackbox
     template <typename Derived>
     struct InputMappingContext
     {
-        std::unordered_map<InputKey, std::shared_ptr<KeyBinding>, InputKeyHash> keybinds {};
+        std::unordered_map<InputKey, std::vector<std::shared_ptr<KeyBinding>>, InputKeyHash> keybinds {};
 
         InputMappingContext(const std::initializer_list<InputMappingBase> mappings)
         {
@@ -19,11 +19,11 @@ namespace blackbox
             {
                 for (auto& keyMapping : mapping.keyMappings)
                 {
-                    keybinds[keyMapping.key] = std::make_shared<KeyBinding>(KeyBinding{
+                    keybinds[keyMapping.key].push_back(std::make_shared<KeyBinding>(KeyBinding{
                         .actionType = mapping.actionType,
                         .contextType = std::type_index(typeid(Derived)),
                         .modifiers = keyMapping.modifiers,
-                    });
+                    }));
                 } 
             } 
         }

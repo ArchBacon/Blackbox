@@ -1,5 +1,7 @@
 ﻿#include "Input.hpp"
 
+#include <iostream>
+
 #include "Engine.hpp"
 #include "Events.hpp"
 #include "EventBus.hpp"
@@ -32,24 +34,24 @@ namespace blackbox
         eventbus.Subscribe<KeyReleasedEvent>(this, &Input::OnKeyReleasedEvent);
 
         // Mouse
-        eventbus.Subscribe<MouseButtonPressedEvent>(this, &Input::OnButtonPressedEvent);
-        eventbus.Subscribe<MouseButtonReleasedEvent>(this, &Input::OnButtonReleasedEvent);
-        eventbus.Subscribe<MouseMotionEvent>(this, &Input::OnMouseMovedEvent);
-        eventbus.Subscribe<MouseWheelEvent>(this, &Input::OnScrolledEvent);
-
+        // eventbus.Subscribe<MouseButtonPressedEvent>(this, &Input::OnButtonPressedEvent);
+        // eventbus.Subscribe<MouseButtonReleasedEvent>(this, &Input::OnButtonReleasedEvent);
+        // eventbus.Subscribe<MouseMotionEvent>(this, &Input::OnMouseMovedEvent);
+        // eventbus.Subscribe<MouseWheelEvent>(this, &Input::OnScrolledEvent);
+        
         // Controller
-        eventbus.Subscribe<FaceButtonPressedEvent>(this, &Input::OnFaceButtonPressedEvent);
-        eventbus.Subscribe<FaceButtonReleasedEvent>(this, &Input::OnFaceButtonReleasedEvent);
-        eventbus.Subscribe<ShoulderPressedEvent>(this, &Input::OnShoulderPressedEvent);
-        eventbus.Subscribe<ShoulderReleasedEvent>(this, &Input::OnShoulderReleasedEvent);
-        eventbus.Subscribe<TriggerEvent>(this, &Input::OnTriggerEvent);
-        eventbus.Subscribe<DPadPressedEvent>(this, &Input::OnDPadPressedEvent);
-        eventbus.Subscribe<DPadReleasedEvent>(this, &Input::OnDPadReleasedEvent);
-        eventbus.Subscribe<SpecialPressedEvent>(this, &Input::OnSpecialPressedEvent);
-        eventbus.Subscribe<SpecialReleasedEvent>(this, &Input::OnSpecialReleasedEvent);
-        eventbus.Subscribe<StickMotionEvent>(this, &Input::OnStickMotionEvent);
-        eventbus.Subscribe<StickPressedEvent>(this, &Input::OnStickPressedEvent);
-        eventbus.Subscribe<StickReleasedEvent>(this, &Input::OnStickReleasedEvent);
+        // eventbus.Subscribe<FaceButtonPressedEvent>(this, &Input::OnFaceButtonPressedEvent);
+        // eventbus.Subscribe<FaceButtonReleasedEvent>(this, &Input::OnFaceButtonReleasedEvent);
+        // eventbus.Subscribe<ShoulderPressedEvent>(this, &Input::OnShoulderPressedEvent);
+        // eventbus.Subscribe<ShoulderReleasedEvent>(this, &Input::OnShoulderReleasedEvent);
+        // eventbus.Subscribe<TriggerEvent>(this, &Input::OnTriggerEvent);
+        // eventbus.Subscribe<DPadPressedEvent>(this, &Input::OnDPadPressedEvent);
+        // eventbus.Subscribe<DPadReleasedEvent>(this, &Input::OnDPadReleasedEvent);
+        // eventbus.Subscribe<SpecialPressedEvent>(this, &Input::OnSpecialPressedEvent);
+        // eventbus.Subscribe<SpecialReleasedEvent>(this, &Input::OnSpecialReleasedEvent);
+        // eventbus.Subscribe<StickMotionEvent>(this, &Input::OnStickMotionEvent);
+        // eventbus.Subscribe<StickPressedEvent>(this, &Input::OnStickPressedEvent);
+        // eventbus.Subscribe<StickReleasedEvent>(this, &Input::OnStickReleasedEvent);
         
         eventbus.Subscribe<TickEvent>(this, &Input::OnTickEvent);
     }
@@ -63,196 +65,111 @@ namespace blackbox
             LogInput->Info("Pressed Keyboard key: {}", to_string(event.key));
         #endif
 
-        HandlePressedInput({1.0f, 0.0f}, {event.key});
+        const InputKey key = {event.key};
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+
+        keyStates[key].value = {1.0f, 0.0f}; // Pressed state
+        for (const auto& keyBinding : keybinds[key])
+        {
+            if (!contexts.contains(keyBinding->contextType))
+            {
+                continue; // Key does not trigger if none of the corresponding context are active
+            }
+
+            const auto& action = actions[keyBinding->actionType];
+            float2 value = {0.0f, 0.0f};
+            for (auto actionKey : actionKeys[keyBinding->actionType])
+            {
+                for (const auto& mod : keyBinding->modifiers)
+                {
+                    value += mod->Execute(keyStates[actionKey].value);
+                }
+            } 
+            LogInput->Warn("Action value: ({0}, {1})", value.x, value.y);
+            for (auto& callback : action->onStartedCallbacks)
+            {
+                callback(value);
+            }
+        }
+
+        pressedKeys.insert(key);
     }
+    
     void Input::OnKeyReleasedEvent(const KeyReleasedEvent event)
     {
         #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_KEYBOARD)
         LogInput->Info("Released Keyboard key: {}", to_string(event.key));
         #endif
         
-        HandleReleaseInput({0.0f, 0.0f}, {event.key});
-    }
+        const InputKey key = {event.key};
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
 
-    // Mouse
-    void Input::OnButtonPressedEvent(const MouseButtonPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
-            LogInput->Info("Pressed mouse button: {}", to_string(event.button));
-        #endif
+        keyStates[key].value = {0.0f, 0.0f}; // Unpressed state
+        for (const auto& keyBinding : keybinds[key])
+        {
+            if (!contexts.contains(keyBinding->contextType))
+            {
+                continue; // Key does not trigger if none of the corresponding context are active
+            }
 
-        HandlePressedInput({1.0f, 0.0f}, {event.button});
-    }
-    void Input::OnButtonReleasedEvent(const MouseButtonReleasedEvent event)
-    {
-        HandleReleaseInput({0.0f, 0.0f}, {event.button});
-    }
-    void Input::OnMouseMovedEvent(const MouseMotionEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
-            LogInput->Info("Mouse Moved: ({}, {}) to ({}, {})", event.direction.x, event.direction.y, event.position.x, event.position.y);
-        #endif
-        
-        mousePosition = event.position;
-        HandlePressedInput(event.direction, {Mouse::Motion::XY});
-    }
-    void Input::OnScrolledEvent(const MouseWheelEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
-            LogInput->Info("Scrolled: {}", event.direction);
-        #endif
+            const auto& action = actions[keyBinding->actionType];
+            float2 value = {0.0f, 0.0f};
+            for (auto actionKey : actionKeys[keyBinding->actionType])
+            {
+                for (const auto& mod : keyBinding->modifiers)
+                {
+                    value += mod->Execute(keyStates[actionKey].value);
+                }
+            }
+            
+            for (auto& callback : action->onEndedCallbacks)
+            {
+                callback(value);
+            }
+        }
 
-        HandlePressedInput({event.direction, 0.0f}, {Mouse::Wheel::Vertical});
-    }
-
-    // Controller
-    void Input::OnFaceButtonPressedEvent(FaceButtonPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
-            LogInput->Info("Pressed controller button: {}", to_string(event.button));
-        #endif
-
-        HandlePressedInput({1.0f, 0.0f}, {event.button});
-    }
-    void Input::OnFaceButtonReleasedEvent(FaceButtonReleasedEvent event)
-    {
-        HandleReleaseInput({1.0f, 0.0f}, {event.button});
-    }
-    void Input::OnShoulderPressedEvent(ShoulderPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
-        LogInput->Info("Pressed controller button: {}", to_string(event.shoulder));
-        #endif
-
-        HandlePressedInput({1.0f, 0.0f}, {event.shoulder});
-    }
-    void Input::OnShoulderReleasedEvent(ShoulderReleasedEvent event)
-    {
-        HandleReleaseInput({0.0f, 0.0f}, {event.shoulder});
-    }
-    void Input::OnTriggerEvent(TriggerEvent event)
-    {
-        HandlePressedInput({event.value, 0.0f}, {event.trigger});
-    }
-    void Input::OnDPadPressedEvent(DPadPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
-        LogInput->Info("Pressed controller button: {}", to_string(event.button));
-        #endif
-
-        HandlePressedInput({1.0f, 0.0f}, {event.button});
-    }
-    void Input::OnDPadReleasedEvent(DPadReleasedEvent event)
-    {
-        HandlePressedInput({0.0f, 0.0f}, {event.button});
-    }
-    void Input::OnSpecialPressedEvent(SpecialPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
-        LogInput->Info("Pressed controller button: {}", to_string(event.button));
-        #endif
-
-        HandlePressedInput({1.0f, 0.0f}, {event.button});
-    }
-    void Input::OnSpecialReleasedEvent(SpecialReleasedEvent event)
-    {
-        HandlePressedInput({0.0f, 0.0f}, {event.button});
-    }
-    void Input::OnStickMotionEvent(StickMotionEvent event)
-    {
-        HandlePressedInput(event.value, {event.stick});
-    }
-    void Input::OnStickPressedEvent(StickPressedEvent event)
-    {
-        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_CONTROLLER)
-        LogInput->Info("Pressed controller button: {}", to_string(event.stick));
-        #endif
-
-        HandlePressedInput({1.0f, 0.0f}, {event.stick});
-    }
-    void Input::OnStickReleasedEvent(StickReleasedEvent event)
-    {
-        HandlePressedInput({0.0f, 0.0f}, {event.stick});
+        pressedKeys.erase(key);
     }
 
     // General
     void Input::OnTickEvent(const TickEvent event)
     {
-        for (auto& key : activeKeys)
+        for (auto& key : pressedKeys)
         {
             if (!keybinds.contains(key))
             {
                 continue;
             }
             
-            const auto binds = keybinds[key];
-            if (!contexts.contains(binds->contextType))
+            // keyStates[key].duration += event.deltaTime;
+            for (const auto& keyBinding : keybinds[key])
             {
-                continue;
+                if (!contexts.contains(keyBinding->contextType))
+                {
+                    continue; // Key does not trigger if none of the corresponding context are active
+                }
+
+                const auto& action = actions[keyBinding->actionType];
+                float2 value = {0.0f, 0.0f};
+                for (auto actionKey : actionKeys[keyBinding->actionType])
+                {
+                    for (const auto& mod : keyBinding->modifiers)
+                    {
+                        value += mod->Execute(keyStates[actionKey].value);
+                    }
+                } 
+            
+                for (auto& callback : action->onTriggeredCallbacks)
+                {
+                    callback(value);
+                }
             }
-        
-            const auto& action = actions[binds->actionType];
-            action->duration += event.deltaTime;
-            for (auto& callback : action->onTriggeredCallbacks)
-            {
-                callback({lastActionsValue[binds->actionType]});
-            }
         }
-    }
-
-    void Input::HandlePressedInput(float2 value, const InputKey key)
-    {
-        if (!keybinds.contains(key))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[key];
-        if (!contexts.contains(binds->contextType))
-        {
-            return; // Key does not trigger if the corresponding context isn't active
-        }
-        
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
-
-        const auto& action = actions[binds->actionType];
-        action->duration = 0.0f;
-        for (auto& callback : action->onStartedCallbacks)
-        {
-            callback(value);
-        }
-
-        activeKeys.insert(key);
-    }
-    void Input::HandleReleaseInput(float2 value, const InputKey key)
-    {
-        if (!keybinds.contains(key))
-        {
-            return;
-        }
-        
-        const auto binds = keybinds[key];
-        if (!contexts.contains(binds->contextType))
-        {
-            return;
-        }
-        
-        for (const auto& mod : binds->modifiers)
-        {
-            value = mod->Execute(value);
-        }
-        lastActionsValue[binds->actionType] = value;
-        
-        const auto& action = actions[binds->actionType];
-        for (auto& callback : action->onEndedCallbacks)
-        {
-            callback(value);
-        }
-        
-        activeKeys.erase(key);
     }
 }

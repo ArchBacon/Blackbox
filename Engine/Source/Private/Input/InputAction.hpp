@@ -11,7 +11,6 @@ namespace blackbox
         std::vector<std::function<void(InputValue)>> onStartedCallbacks {};
         std::vector<std::function<void(InputValue)>> onEndedCallbacks {};
         std::vector<std::function<void(InputValue)>> onTriggeredCallbacks {};
-        float duration {0.0f};
         
     public:
         template <typename Class>

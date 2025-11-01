@@ -72,7 +72,7 @@ namespace blackbox
         void OnCloseAction(InputValue) { RequestShutdown({}); }
         void TestActionStarted(InputValue value) { LogInput->Info("Started: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
         void TestActionEnded(InputValue value) { LogInput->Info("Ended: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
-        void TestActionTriggered(InputValue value) { LogInput->Info("Triggered: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
+        void TestActionTriggered(InputValue value) { /*LogInput->Info("Triggered: ({}, {})", value.Get<float2>().x, value.Get<float2>().y);*/ }
     };
 }
 
