@@ -107,7 +107,7 @@ namespace blackbox
         void OnStickReleasedEvent(StickReleasedEvent event);
 
         // General
-        void OnTickEvent(TickEvent event);
+        void ProcessHeldInputs(TickEvent event);
     };
 
     template <InputMappingContextType T>

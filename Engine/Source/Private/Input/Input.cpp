@@ -53,7 +53,7 @@ namespace blackbox
         // eventbus.Subscribe<StickPressedEvent>(this, &Input::OnStickPressedEvent);
         // eventbus.Subscribe<StickReleasedEvent>(this, &Input::OnStickReleasedEvent);
         
-        eventbus.Subscribe<TickEvent>(this, &Input::OnTickEvent);
+        eventbus.Subscribe<TickEvent>(this, &Input::ProcessHeldInputs);
     }
 
     void Input::RemoveAllContexts() { contexts.clear(); }
@@ -83,12 +83,22 @@ namespace blackbox
             float2 value = {0.0f, 0.0f};
             for (auto actionKey : actionKeys[keyBinding->actionType])
             {
-                for (const auto& mod : keyBinding->modifiers)
+                // Find the binding for this specific key to get its modifiers
+                for (const auto& actionKeyBinding : keybinds[actionKey])
                 {
-                    value += mod->Execute(keyStates[actionKey].value);
+                    if (actionKeyBinding->actionType == keyBinding->actionType)
+                    {
+                        float2 keyValue = keyStates[actionKey].value;
+                        for (const auto& mod : actionKeyBinding->modifiers)
+                        {
+                            keyValue = mod->Execute(keyValue);
+                        }
+                        value += keyValue;
+                        break;
+                    }
                 }
-            } 
-            LogInput->Warn("Action value: ({0}, {1})", value.x, value.y);
+            }
+            
             for (auto& callback : action->onStartedCallbacks)
             {
                 callback(value);
@@ -122,12 +132,22 @@ namespace blackbox
             float2 value = {0.0f, 0.0f};
             for (auto actionKey : actionKeys[keyBinding->actionType])
             {
-                for (const auto& mod : keyBinding->modifiers)
+                // Find the binding for this specific key to get its modifiers
+                for (const auto& actionKeyBinding : keybinds[actionKey])
                 {
-                    value += mod->Execute(keyStates[actionKey].value);
+                    if (actionKeyBinding->actionType == keyBinding->actionType)
+                    {
+                        float2 keyValue = keyStates[actionKey].value;
+                        for (const auto& mod : actionKeyBinding->modifiers)
+                        {
+                            keyValue = mod->Execute(keyValue);
+                        }
+                        value += keyValue;
+                        break;
+                    }
                 }
             }
-            
+
             for (auto& callback : action->onEndedCallbacks)
             {
                 callback(value);
@@ -138,7 +158,7 @@ namespace blackbox
     }
 
     // General
-    void Input::OnTickEvent(const TickEvent event)
+    void Input::ProcessHeldInputs(const TickEvent event)
     {
         for (auto& key : pressedKeys)
         {
@@ -159,12 +179,22 @@ namespace blackbox
                 float2 value = {0.0f, 0.0f};
                 for (auto actionKey : actionKeys[keyBinding->actionType])
                 {
-                    for (const auto& mod : keyBinding->modifiers)
+                    // Find the binding for this specific key to get its modifiers
+                    for (const auto& actionKeyBinding : keybinds[actionKey])
                     {
-                        value += mod->Execute(keyStates[actionKey].value);
+                        if (actionKeyBinding->actionType == keyBinding->actionType)
+                        {
+                            float2 keyValue = keyStates[actionKey].value;
+                            for (const auto& mod : actionKeyBinding->modifiers)
+                            {
+                                keyValue = mod->Execute(keyValue);
+                            }
+                            value += keyValue;
+                            break;
+                        }
                     }
-                } 
-            
+                }
+
                 for (auto& callback : action->onTriggeredCallbacks)
                 {
                     callback(value);
