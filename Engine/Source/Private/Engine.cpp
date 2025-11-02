@@ -33,7 +33,7 @@ void blackbox::BlackboxEngine::Initialize()
     eventbus->Subscribe<WindowRestoredEvent>(this, &BlackboxEngine::StartRendering);
     eventbus->Subscribe<WindowFocusGainedEvent>(this, &BlackboxEngine::StartRendering);
 
-    // input->AddContext<EngineContext>();
+    input->AddContext<EngineContext>();
     input->AddContext<TestContext>();
 }
 

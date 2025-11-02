@@ -137,7 +137,11 @@ namespace blackbox
             } 
         }
 
-        keybinds.merge(context.keybinds);
+        // Manually merge the vectors for each key to support multiple contexts binding the same key
+        for (auto& [key, bindings] : context.keybinds)
+        {
+            keybinds[key].insert(keybinds[key].end(), bindings.begin(), bindings.end());
+        }
     }
 
     template <InputMappingContextType T>

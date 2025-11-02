@@ -21,7 +21,7 @@ namespace blackbox
         // ReSharper disable once CppPossiblyUnintendedObjectSlicing
         EngineContext() : InputMappingContext({
             InputMapping<ExitEngineAction> {
-                {Keyboard::Escape},
+                {Keyboard::W},
             },
         }) {}
     };
@@ -69,10 +69,10 @@ namespace blackbox
         void StopRendering(const Event&) { stopRendering = true; }
         void StartRendering(const Event&) { stopRendering = false; }
 
-        void OnCloseAction(InputValue) { RequestShutdown({}); }
+        void OnCloseAction(InputValue value) { /*RequestShutdown({});*/ LogInput->Info("Close: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
         void TestActionStarted(InputValue value) { LogInput->Info("Started: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
         void TestActionEnded(InputValue value) { LogInput->Info("Ended: ({}, {})", value.Get<float2>().x, value.Get<float2>().y); }
-        void TestActionTriggered(InputValue value) { LogInput->Info("Triggered: ({}, {}) {}s", value.Get<float2>().x, value.Get<float2>().y, value.Duration()); }
+        void TestActionTriggered(InputValue value) { /*LogInput->Info("Triggered: ({}, {}) {}s", value.Get<float2>().x, value.Get<float2>().y, value.Duration());*/ }
     };
 }
 
