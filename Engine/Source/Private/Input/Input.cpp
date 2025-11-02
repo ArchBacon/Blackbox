@@ -79,6 +79,12 @@ namespace blackbox
                 continue; // Key does not trigger if none of the corresponding context are active
             }
 
+            // Initialize action duration if this is the first key pressed for this action
+            if (!actionDurations.contains(keyBinding->actionType))
+            {
+                actionDurations[keyBinding->actionType] = 0.0f;
+            }
+
             const auto& action = actions[keyBinding->actionType];
             float2 value = {0.0f, 0.0f};
             for (auto actionKey : actionKeys[keyBinding->actionType])
@@ -98,10 +104,12 @@ namespace blackbox
                     }
                 }
             }
-            
+
+            float duration = actionDurations[keyBinding->actionType];
+
             for (auto& callback : action->onStartedCallbacks)
             {
-                callback(value);
+                callback(InputValue(value, duration));
             }
         }
 
@@ -148,9 +156,29 @@ namespace blackbox
                 }
             }
 
+            // Check if any other keys for this action are still pressed
+            bool actionStillActive = false;
+            for (auto actionKey : actionKeys[keyBinding->actionType])
+            {
+                if (actionKey != key && pressedKeys.contains(actionKey))
+                {
+                    actionStillActive = true;
+                    break;
+                }
+            }
+
+            // Get duration before potentially resetting it
+            float duration = actionDurations.contains(keyBinding->actionType) ? actionDurations[keyBinding->actionType] : 0.0f;
+
             for (auto& callback : action->onEndedCallbacks)
             {
-                callback(value);
+                callback(InputValue(value, duration));
+            }
+
+            // Reset duration only if no other keys for this action are pressed
+            if (!actionStillActive)
+            {
+                actionDurations.erase(keyBinding->actionType);
             }
         }
 
@@ -160,19 +188,28 @@ namespace blackbox
     // General
     void Input::ProcessHeldInputs(const TickEvent event)
     {
+        // Track which actions we've already updated this frame
+        std::unordered_set<std::type_index> processedActions;
+
         for (auto& key : pressedKeys)
         {
             if (!keybinds.contains(key))
             {
                 continue;
             }
-            
-            // keyStates[key].duration += event.deltaTime;
+
             for (const auto& keyBinding : keybinds[key])
             {
                 if (!contexts.contains(keyBinding->contextType))
                 {
                     continue; // Key does not trigger if none of the corresponding context are active
+                }
+
+                // Update action duration only once per frame
+                if (!processedActions.contains(keyBinding->actionType))
+                {
+                    actionDurations[keyBinding->actionType] += event.deltaTime;
+                    processedActions.insert(keyBinding->actionType);
                 }
 
                 const auto& action = actions[keyBinding->actionType];
@@ -195,9 +232,11 @@ namespace blackbox
                     }
                 }
 
+                float duration = actionDurations[keyBinding->actionType];
+
                 for (auto& callback : action->onTriggeredCallbacks)
                 {
-                    callback(value);
+                    callback(InputValue(value, duration));
                 }
             }
         }

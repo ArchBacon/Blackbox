@@ -10,12 +10,15 @@ namespace blackbox
         float duration {0.0f};
 
     public:
-        InputValue(const float2 value)
+        InputValue(const float2 value, const float duration = 0.0f)
             : value(glm::clamp(value, {-1.f, -1.f}, {1.f, 1.f}))
+            , duration(duration)
         {}
-        
+
         template <typename T>
         T Get();
+
+        float Duration() const { return duration; }
     };
 
     template <typename T>

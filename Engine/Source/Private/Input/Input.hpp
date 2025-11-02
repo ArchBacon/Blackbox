@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include <typeindex>
@@ -42,10 +42,9 @@ namespace blackbox
     */
     class Input
     {
-        struct KeyState
+        struct KeyValue
         {
             float2 value {0.0f, 0.0f};
-            // float duration {0.0f};
         };
         
         EventBus& eventbus;
@@ -53,9 +52,10 @@ namespace blackbox
         std::unordered_set<std::type_index> contexts {};
         std::unordered_map<std::type_index, std::unique_ptr<InputAction>> actions {};
         std::unordered_map<InputKey, std::vector<std::shared_ptr<KeyBinding>>, InputKeyHash> keybinds {}; // all bindings on contexts with the input key
-        std::unordered_map<InputKey, KeyState, InputKeyHash> keyStates {}; // last known values of keys
+        std::unordered_map<InputKey, KeyValue, InputKeyHash> keyStates {}; // last known values of keys
         std::unordered_set<InputKey, InputKeyHash> pressedKeys {}; // keys currently pressed
         std::unordered_map<std::type_index, std::vector<InputKey>> actionKeys {}; // keys that belong to an action
+        std::unordered_map<std::type_index, float> actionDurations {}; // how long each action has been active
         float2 mousePosition {};
     
     public:
