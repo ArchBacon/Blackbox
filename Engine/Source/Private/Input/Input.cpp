@@ -34,10 +34,10 @@ namespace blackbox
         eventbus.Subscribe<KeyReleasedEvent>(this, &Input::OnKeyReleasedEvent);
 
         // Mouse
-        // eventbus.Subscribe<MouseButtonPressedEvent>(this, &Input::OnButtonPressedEvent);
-        // eventbus.Subscribe<MouseButtonReleasedEvent>(this, &Input::OnButtonReleasedEvent);
-        // eventbus.Subscribe<MouseMotionEvent>(this, &Input::OnMouseMovedEvent);
-        // eventbus.Subscribe<MouseWheelEvent>(this, &Input::OnScrolledEvent);
+        eventbus.Subscribe<MouseButtonPressedEvent>(this, &Input::OnButtonPressedEvent);
+        eventbus.Subscribe<MouseButtonReleasedEvent>(this, &Input::OnButtonReleasedEvent);
+        eventbus.Subscribe<MouseMotionEvent>(this, &Input::OnMouseMovedEvent);
+        eventbus.Subscribe<MouseWheelEvent>(this, &Input::OnScrolledEvent);
         
         // Controller
         // eventbus.Subscribe<FaceButtonPressedEvent>(this, &Input::OnFaceButtonPressedEvent);
@@ -86,25 +86,7 @@ namespace blackbox
             }
 
             const auto& action = actions[keyBinding->actionType];
-            float2 value = {0.0f, 0.0f};
-            for (auto actionKey : actionKeys[keyBinding->actionType])
-            {
-                // Find the binding for this specific key to get its modifiers
-                for (const auto& actionKeyBinding : keybinds[actionKey])
-                {
-                    if (actionKeyBinding->actionType == keyBinding->actionType)
-                    {
-                        float2 keyValue = keyStates[actionKey].value;
-                        for (const auto& mod : actionKeyBinding->modifiers)
-                        {
-                            keyValue = mod->Execute(keyValue);
-                        }
-                        value += keyValue;
-                        break;
-                    }
-                }
-            }
-
+            float2 value = CalculateActionValue(keyBinding->actionType);
             float duration = actionDurations[keyBinding->actionType];
 
             for (auto& callback : action->onStartedCallbacks)
@@ -137,24 +119,7 @@ namespace blackbox
             }
 
             const auto& action = actions[keyBinding->actionType];
-            float2 value = {0.0f, 0.0f};
-            for (auto actionKey : actionKeys[keyBinding->actionType])
-            {
-                // Find the binding for this specific key to get its modifiers
-                for (const auto& actionKeyBinding : keybinds[actionKey])
-                {
-                    if (actionKeyBinding->actionType == keyBinding->actionType)
-                    {
-                        float2 keyValue = keyStates[actionKey].value;
-                        for (const auto& mod : actionKeyBinding->modifiers)
-                        {
-                            keyValue = mod->Execute(keyValue);
-                        }
-                        value += keyValue;
-                        break;
-                    }
-                }
-            }
+            float2 value = CalculateActionValue(keyBinding->actionType);
 
             // Check if any other keys for this action are still pressed
             bool actionStillActive = false;
@@ -185,6 +150,190 @@ namespace blackbox
         pressedKeys.erase(key);
     }
 
+    // Mouse
+    void Input::OnButtonPressedEvent(const MouseButtonPressedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
+            LogInput->Info("Pressed Mouse button: {}", static_cast<int>(event.button));
+        #endif
+
+        const InputKey key = {event.button};
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+
+        keyStates[key].value = {1.0f, 0.0f}; // Pressed state
+        for (const auto& keyBinding : keybinds[key])
+        {
+            if (!contexts.contains(keyBinding->contextType))
+            {
+                continue;
+            }
+
+            // Initialize action duration if this is the first key pressed for this action
+            if (!actionDurations.contains(keyBinding->actionType))
+            {
+                actionDurations[keyBinding->actionType] = 0.0f;
+            }
+
+            const auto& action = actions[keyBinding->actionType];
+            float2 value = CalculateActionValue(keyBinding->actionType);
+            float duration = actionDurations[keyBinding->actionType];
+
+            for (auto& callback : action->onStartedCallbacks)
+            {
+                callback(InputValue(value, duration));
+            }
+        }
+
+        pressedKeys.insert(key);
+    }
+
+    void Input::OnButtonReleasedEvent(const MouseButtonReleasedEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
+            LogInput->Info("Released Mouse button: {}", static_cast<int>(event.button));
+        #endif
+
+        const InputKey key = {event.button};
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+
+        keyStates[key].value = {0.0f, 0.0f}; // Unpressed state
+        for (const auto& keyBinding : keybinds[key])
+        {
+            if (!contexts.contains(keyBinding->contextType))
+            {
+                continue;
+            }
+
+            const auto& action = actions[keyBinding->actionType];
+            float2 value = CalculateActionValue(keyBinding->actionType);
+
+            // Check if any other keys for this action are still pressed
+            bool actionStillActive = false;
+            for (auto actionKey : actionKeys[keyBinding->actionType])
+            {
+                if (actionKey != key && pressedKeys.contains(actionKey))
+                {
+                    actionStillActive = true;
+                    break;
+                }
+            }
+
+            // Get duration before potentially resetting it
+            float duration = actionDurations.contains(keyBinding->actionType) ? actionDurations[keyBinding->actionType] : 0.0f;
+
+            for (auto& callback : action->onEndedCallbacks)
+            {
+                callback(InputValue(value, duration));
+            }
+
+            // Reset duration only if no other keys for this action are pressed
+            if (!actionStillActive)
+            {
+                actionDurations.erase(keyBinding->actionType);
+            }
+        }
+
+        pressedKeys.erase(key);
+    }
+
+    void Input::OnMouseMovedEvent(const MouseMotionEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
+            LogInput->Info("Mouse moved: direction({}, {}), position({}, {})",
+                event.direction.x, event.direction.y, event.position.x, event.position.y);
+        #endif
+
+        mousePosition = event.position;
+
+        // Process as continuous input with the direction
+        ProcessContinuousInput({Mouse::Motion::XY}, event.direction);
+    }
+
+    void Input::OnScrolledEvent(const MouseWheelEvent event)
+    {
+        #if defined(BLACKBOX_DEBUG_INPUT_ALL) || defined(BLACKBOX_DEBUG_INPUT_MOUSE)
+            LogInput->Info("Mouse scrolled: {}", event.direction);
+        #endif
+
+        // Process as continuous input with vertical scroll direction
+        ProcessContinuousInput({Mouse::Wheel::Vertical}, {event.direction, 0.0f});
+    }
+
+    // Helper methods
+    float2 Input::CalculateActionValue(const std::type_index actionType)
+    {
+        float2 value = {0.0f, 0.0f};
+        for (auto actionKey : actionKeys[actionType])
+        {
+            // Find the binding for this specific key to get its modifiers
+            for (const auto& actionKeyBinding : keybinds.at(actionKey))
+            {
+                if (actionKeyBinding->actionType == actionType)
+                {
+                    float2 keyValue = keyStates[actionKey].value;
+                    for (const auto& mod : actionKeyBinding->modifiers)
+                    {
+                        keyValue = mod->Execute(keyValue);
+                    }
+                    value += keyValue;
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+
+    void Input::ProcessContinuousInput(const InputKey& key, float2 rawValue)
+    {
+        if (!keybinds.contains(key))
+        {
+            return;
+        }
+
+        keyStates[key].value = rawValue;
+
+        for (const auto& keyBinding : keybinds[key])
+        {
+            if (!contexts.contains(keyBinding->contextType))
+            {
+                continue;
+            }
+
+            auto& continuousState = continuousInputs[keyBinding->actionType];
+            const auto& action = actions[keyBinding->actionType];
+
+            // Calculate the full action value with all modifiers
+            float2 value = CalculateActionValue(keyBinding->actionType);
+
+            // If this is the first input, trigger onStarted
+            if (!continuousState.isActive)
+            {
+                continuousState.isActive = true;
+                continuousState.duration = 0.0f;
+                for (auto& callback : action->onStartedCallbacks)
+                {
+                    callback(InputValue(value, 0.0f));
+                }
+            }
+
+            // Reset the debounce timer
+            continuousState.timeSinceLastInput = 0.0f;
+            continuousState.lastValue = value;
+
+            // Trigger onTriggered callbacks
+            for (auto& callback : action->onTriggeredCallbacks)
+            {
+                callback(InputValue(value, continuousState.duration));
+            }
+        }
+    }
+
     // General
     void Input::ProcessHeldInputs(const TickEvent event)
     {
@@ -213,25 +362,7 @@ namespace blackbox
                 }
 
                 const auto& action = actions[keyBinding->actionType];
-                float2 value = {0.0f, 0.0f};
-                for (auto actionKey : actionKeys[keyBinding->actionType])
-                {
-                    // Find the binding for this specific key to get its modifiers
-                    for (const auto& actionKeyBinding : keybinds[actionKey])
-                    {
-                        if (actionKeyBinding->actionType == keyBinding->actionType)
-                        {
-                            float2 keyValue = keyStates[actionKey].value;
-                            for (const auto& mod : actionKeyBinding->modifiers)
-                            {
-                                keyValue = mod->Execute(keyValue);
-                            }
-                            value += keyValue;
-                            break;
-                        }
-                    }
-                }
-
+                float2 value = CalculateActionValue(keyBinding->actionType);
                 float duration = actionDurations[keyBinding->actionType];
 
                 for (auto& callback : action->onTriggeredCallbacks)
@@ -239,6 +370,39 @@ namespace blackbox
                     callback(InputValue(value, duration));
                 }
             }
+        }
+
+        // Process continuous inputs for debounced onEnded
+        std::vector<std::type_index> toRemove;
+        for (auto& [actionType, state] : continuousInputs)
+        {
+            if (!state.isActive)
+            {
+                continue;
+            }
+
+            // Increment timers
+            state.timeSinceLastInput += event.deltaTime;
+            state.duration += event.deltaTime;
+
+            // Check if we've exceeded the debounce duration
+            if (state.timeSinceLastInput >= CONTINUOUS_INPUT_DEBOUNCE)
+            {
+                const auto& action = actions[actionType];
+                for (auto& callback : action->onEndedCallbacks)
+                {
+                    callback(InputValue(state.lastValue, state.duration));
+                }
+
+                // Mark for cleanup
+                toRemove.push_back(actionType);
+            }
+        }
+
+        // Clean up inactive continuous inputs
+        for (const auto& actionType : toRemove)
+        {
+            continuousInputs.erase(actionType);
         }
     }
 }

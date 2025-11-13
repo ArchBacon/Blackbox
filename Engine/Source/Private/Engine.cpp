@@ -34,7 +34,6 @@ void blackbox::BlackboxEngine::Initialize()
     eventbus->Subscribe<WindowFocusGainedEvent>(this, &BlackboxEngine::StartRendering);
 
     input->AddContext<EngineContext>();
-    input->AddContext<TestContext>();
 }
 
 void blackbox::BlackboxEngine::Run()
@@ -45,11 +44,6 @@ void blackbox::BlackboxEngine::Run()
     // TODO: Move to editor play window once it's in, since this shouldn't be default for every project
     auto& exitEvent = input->GetAction<ExitEngineAction>();
     exitEvent.OnStarted(this, &BlackboxEngine::OnCloseAction);
-    
-    auto& testEvent = input->GetAction<TestAction>();
-    testEvent.OnStarted(this, &BlackboxEngine::TestActionStarted);
-    testEvent.OnEnded(this, &BlackboxEngine::TestActionEnded);
-    testEvent.OnTriggered(this, &BlackboxEngine::TestActionTriggered);
     
     while (isRunning)
     {

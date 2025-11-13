@@ -46,6 +46,14 @@ namespace blackbox
         {
             float2 value {0.0f, 0.0f};
         };
+
+        struct ContinuousInputState
+        {
+            bool isActive {false};
+            float timeSinceLastInput {0.0f};
+            float2 lastValue {0.0f, 0.0f};
+            float duration {0.0f}; // total duration of this continuous input session
+        };
         
         EventBus& eventbus;
         
@@ -56,7 +64,10 @@ namespace blackbox
         std::unordered_set<InputKey, InputKeyHash> pressedKeys {}; // keys currently pressed
         std::unordered_map<std::type_index, std::vector<InputKey>> actionKeys {}; // keys that belong to an action
         std::unordered_map<std::type_index, float> actionDurations {}; // how long each action has been active
+        std::unordered_map<std::type_index, ContinuousInputState> continuousInputs {}; // track continuous inputs for debounced onEnded
         float2 mousePosition {};
+
+        static constexpr float CONTINUOUS_INPUT_DEBOUNCE = 0.1f; // Time to wait before triggering onEnded (100ms)
     
     public:
         Input(EventBus& eventbus);
@@ -108,6 +119,10 @@ namespace blackbox
 
         // General
         void ProcessHeldInputs(TickEvent event);
+
+        // Helper methods
+        float2 CalculateActionValue(std::type_index actionType);
+        void ProcessContinuousInput(const InputKey& key, float2 rawValue);
     };
 
     template <InputMappingContextType T>
