@@ -55,7 +55,7 @@ namespace blackbox
         void StopRendering(const Event&) { stopRendering = true; }
         void StartRendering(const Event&) { stopRendering = false; }
 
-        void OnCloseAction(InputValue) { RequestShutdown({}); }
+        void OnCloseAction(InputValue value) { RequestShutdown({}); }
     };
 }
 

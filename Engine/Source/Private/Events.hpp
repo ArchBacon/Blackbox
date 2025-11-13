@@ -19,8 +19,8 @@ namespace blackbox
     // Mouse Input Events
     struct MouseButtonPressedEvent : Event { Mouse::Button button {}; };
     struct MouseButtonReleasedEvent : Event { Mouse::Button button {}; };
-    struct MouseMotionEvent : Event { float2 xy {}; };
-    struct MouseWheelEvent : Event { float y {}; };
+    struct MouseMotionEvent : Event { float2 direction {}; float2 position {}; };
+    struct MouseWheelEvent : Event { float direction {}; };
     
     // Controller Input Events
     struct FaceButtonPressedEvent : Event { Controller::FaceButton button {}; };
@@ -32,9 +32,11 @@ namespace blackbox
     struct DPadReleasedEvent : Event { Controller::DPad button {}; };
     struct SpecialPressedEvent : Event { Controller::Special button {}; };
     struct SpecialReleasedEvent : Event { Controller::Special button {}; };
-    struct StickMotionEvent : Event { Controller::Stick::Motion xy {}; };
+    struct StickMotionEvent : Event { Controller::Stick::Motion stick {}; float2 value {}; };
     struct StickPressedEvent : Event { Controller::Stick::Pressed stick {}; };
     struct StickReleasedEvent : Event { Controller::Stick::Pressed stick {}; };
+    struct ControllerAddedEvent : Event { uint32_t device {}; };
+    struct ControllerRemovedEvent : Event { uint32_t device {}; };
     
     // Window Events
     struct WindowMinimizedEvent : Event {};
@@ -42,4 +44,6 @@ namespace blackbox
     struct WindowResizedEvent : Event { float2 windowSize {}; };
     struct WindowFocusLostEvent : Event {};
     struct WindowFocusGainedEvent : Event {};
+    struct WindowMouseEnterEvent : Event {};
+    struct WindowMouseLeaveEvent : Event {};
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include <typeindex>
@@ -25,9 +25,9 @@ namespace blackbox
      
         struct SteeringAction {};
         struct ThrottleAction {};
-        struct IMC_Driving final : InputMappingContext<IMC_Driving>
+        struct DrivingInputContext final : InputMappingContext<DrivingInputContext>
         {
-            IMC_Driving() : InputMappingContext({
+            DrivingInputContext() : InputMappingContext({
                 InputMapping<SteeringAction> {
                     {Keyboard::A, Swizzle{}, Negate{}},
                     {Keyboard::D, Swizzle{}},
@@ -42,13 +42,33 @@ namespace blackbox
     */
     class Input
     {
+        struct KeyValue
+        {
+            float2 value {0.0f, 0.0f};
+        };
+
+        struct ContinuousInputState
+        {
+            bool isActive {false};
+            float timeSinceLastInput {0.0f};
+            float2 lastValue {0.0f, 0.0f};
+            float duration {0.0f}; // total duration of this continuous input session
+        };
+        
         EventBus& eventbus;
         
         std::unordered_set<std::type_index> contexts {};
-        std::unordered_set<InputKey, InputKeyHash> activeKeys {};
         std::unordered_map<std::type_index, std::unique_ptr<InputAction>> actions {};
-        std::unordered_map<InputKey, std::shared_ptr<KeyBinding>, InputKeyHash> keybinds {};
+        std::unordered_map<InputKey, std::vector<std::shared_ptr<KeyBinding>>, InputKeyHash> keybinds {}; // all bindings on contexts with the input key
+        std::unordered_map<InputKey, KeyValue, InputKeyHash> keyStates {}; // last known values of keys
+        std::unordered_set<InputKey, InputKeyHash> pressedKeys {}; // keys currently pressed
+        std::unordered_map<std::type_index, std::vector<InputKey>> actionKeys {}; // keys that belong to an action
+        std::unordered_map<std::type_index, float> actionDurations {}; // how long each action has been active
+        std::unordered_map<std::type_index, ContinuousInputState> continuousInputs {}; // track continuous inputs for debounced onEnded
+        float2 mousePosition {};
 
+        static constexpr float CONTINUOUS_INPUT_DEBOUNCE = 0.1f; // Time to wait before triggering onEnded (100ms)
+    
     public:
         Input(EventBus& eventbus);
         ~Input() = default;
@@ -70,10 +90,39 @@ namespace blackbox
         template <typename T>
         [[nodiscard]] InputAction& GetAction();
 
+        [[nodiscard]] float2 GetMousePosition() { return mousePosition; }
+
     private:
+        // Keyboard
         void OnKeyPressedEvent(KeyPressedEvent event);
         void OnKeyReleasedEvent(KeyReleasedEvent event);
-        void OnTickEvent(TickEvent event);
+        
+        // Mouse
+        void OnButtonPressedEvent(MouseButtonPressedEvent event);
+        void OnButtonReleasedEvent(MouseButtonReleasedEvent event);
+        void OnMouseMovedEvent(MouseMotionEvent event);
+        void OnScrolledEvent(MouseWheelEvent event);
+        
+        // Controller
+        void OnFaceButtonPressedEvent(FaceButtonPressedEvent event);
+        void OnFaceButtonReleasedEvent(FaceButtonReleasedEvent event);
+        void OnShoulderPressedEvent(ShoulderPressedEvent event);
+        void OnShoulderReleasedEvent(ShoulderReleasedEvent event);
+        void OnTriggerEvent(TriggerEvent event);
+        void OnDPadPressedEvent(DPadPressedEvent event);
+        void OnDPadReleasedEvent(DPadReleasedEvent event);
+        void OnSpecialPressedEvent(SpecialPressedEvent event);
+        void OnSpecialReleasedEvent(SpecialReleasedEvent event);
+        void OnStickMotionEvent(StickMotionEvent event);
+        void OnStickPressedEvent(StickPressedEvent event);
+        void OnStickReleasedEvent(StickReleasedEvent event);
+
+        // General
+        void ProcessHeldInputs(TickEvent event);
+
+        // Helper methods
+        float2 CalculateActionValue(std::type_index actionType);
+        void ProcessContinuousInput(const InputKey& key, float2 rawValue);
     };
 
     template <InputMappingContextType T>
@@ -82,17 +131,31 @@ namespace blackbox
         const auto type = std::type_index(typeid(T));
         if (contexts.contains(type))
         {
-            LogEngine->Warn("Context `{}` is already active.", type.name());
+            LogInput->Warn("Context `{}` is already active.", type.name());
             return;
         }
         
         InputMappingContext context = T();
         contexts.insert(type);
-        keybinds.merge(context.keybinds);
-
-        if (!contexts.contains(type))
+        
+        // add intput keys in the arrays that belong to the actions
+        for (auto keybind : context.keybinds)
         {
-            LogEngine->Warn("Context `{}` couldn't be added.", type.name());
+            for (auto keyBinding : keybind.second)
+            {
+                auto it = std::ranges::find(actionKeys[keyBinding->actionType], keybind.first);
+
+                if (it == actionKeys[keyBinding->actionType].end())
+                {
+                    actionKeys[keyBinding->actionType].push_back(keybind.first);
+                }
+            } 
+        }
+
+        // Manually merge the vectors for each key to support multiple contexts binding the same key
+        for (auto& [key, bindings] : context.keybinds)
+        {
+            keybinds[key].insert(keybinds[key].end(), bindings.begin(), bindings.end());
         }
     }
 
@@ -102,7 +165,7 @@ namespace blackbox
         const auto type = std::type_index(typeid(T));
         if (!contexts.contains(type))
         {
-            LogEngine->Warn("Context `{}` is not active.", type.name());
+            LogInput->Warn("Context `{}` is not active.", type.name());
             return;
         }
         

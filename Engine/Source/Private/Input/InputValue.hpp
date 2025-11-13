@@ -7,12 +7,18 @@ namespace blackbox
     class InputValue
     {
         float2 value {0.0f, 0.0f};
+        float duration {0.0f};
 
     public:
-        InputValue(const float2 value) : value(value) {}
-        
+        InputValue(const float2 value, const float duration = 0.0f)
+            : value(glm::clamp(value, {-1.f, -1.f}, {1.f, 1.f}))
+            , duration(duration)
+        {}
+
         template <typename T>
         T Get();
+
+        float Duration() const { return duration; }
     };
 
     template <typename T>
@@ -22,7 +28,7 @@ namespace blackbox
 
         if constexpr (std::is_same_v<T, bool>)
         {
-            return value.x > 0.0f; // true if non-zero or positive
+            return value.x > 0.0f; // true if positive non-zero
         }
         else if constexpr (std::is_same_v<T, float>)
         {
