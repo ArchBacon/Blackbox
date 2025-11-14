@@ -14,6 +14,7 @@ namespace blackbox
     class Container;
     class Window;
     class FileIO;
+    class GlRenderer;
 
     struct ExitEngineAction {};
     struct EngineContext final : InputMappingContext<EngineContext>
@@ -33,6 +34,7 @@ namespace blackbox
         FileIO* fileIO {nullptr};
         Window* window {nullptr};
         Input* input {nullptr};
+        GlRenderer* renderer {nullptr};
 
         bool stopRendering {false};
         bool isRunning {true};
