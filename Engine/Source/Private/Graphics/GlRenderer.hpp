@@ -1,17 +1,29 @@
 #pragma once
 
-#include <string>
+#include <memory>
+
+#include "Shader.hpp"
 
 namespace blackbox
 {
+    enum class RenderMode : uint8_t
+    {
+        Default,
+        Wireframe
+    };
+    
     class FileIO;
     class GlRenderer
     {
-        std::string vertexShaderSource {};
-        std::string fragmentShaderSource {}; 
+        uint32_t VBO {}, VAO {}, EBO {};
+        uint32_t texture {};
+        std::unique_ptr<Shader> basicShader {nullptr};
         
     public:
-        GlRenderer(FileIO& fileIO);
+        GlRenderer(const FileIO& fileIO);
+        ~GlRenderer();
         void Draw();
+
+        void SetRenderMode(RenderMode mode) const;
     };
 }
