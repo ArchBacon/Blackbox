@@ -35,7 +35,7 @@ namespace blackbox
 
         void SwapBuffers() const;
         void EnableVSync(bool enabled = true) const;
-        
+        void KeepMouseCentered(bool enabled = true) const;
         void OnWindowResized(WindowResizedEvent event);
         
     private:

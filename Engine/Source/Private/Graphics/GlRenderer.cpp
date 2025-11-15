@@ -7,11 +7,60 @@
 #include "Window.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/gtx/dual_quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
+#include "Input/Input.hpp"
 #include "stb/stb_image.h"
 
-blackbox::GlRenderer::GlRenderer(const FileIO& fileIO, Window& window)
-    : window(window)
+namespace blackbox
 {
+    struct MoveCameraAction {};
+    struct MoveCameraUpAction {};
+    struct ActivateCameraAction {};
+    struct RotateCameraAction {};
+    struct EditorCameraContext final : InputMappingContext<EditorCameraContext> {
+        // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+        EditorCameraContext() : InputMappingContext({
+            InputMapping<MoveCameraAction> {
+                {Keyboard::W},
+                {Keyboard::A, Swizzle(), Negate()},
+                {Keyboard::S, Negate()},
+                {Keyboard::D, Swizzle()},
+            },
+            // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+            InputMapping<MoveCameraUpAction> {
+                {Keyboard::E},
+                {Keyboard::Q, Negate()},
+            },
+            // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+            InputMapping<ActivateCameraAction> {
+                {Mouse::Button::Right},
+            },
+            // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+            InputMapping<RotateCameraAction> {
+                {Mouse::Motion::XY, Negate(false, true)},
+            },
+        }) {}
+    };
+}
+
+blackbox::GlRenderer::GlRenderer(const FileIO& fileIO, Window& window, Input& input)
+    : window(window), input(input)
+{
+    input.AddContext<EditorCameraContext>();
+    auto& moveAction = input.GetAction<MoveCameraAction>();
+    moveAction.OnTriggered(this, &GlRenderer::MoveCamera);
+    
+    auto& moveUpAction = input.GetAction<MoveCameraUpAction>();
+    moveUpAction.OnTriggered(this, &GlRenderer::MoveCameraUp);
+
+    auto& rotateAction = input.GetAction<RotateCameraAction>();
+    rotateAction.OnTriggered(this, &GlRenderer::RotateCamera);
+
+    auto& activateRotationAction = input.GetAction<ActivateCameraAction>();
+    activateRotationAction.OnStarted([&](InputValue) { window.KeepMouseCentered(true); });
+    activateRotationAction.OnEnded([&](InputValue) { window.KeepMouseCentered(false); });
+    
     basicShader = std::make_unique<Shader>
     (
         fileIO,
@@ -123,6 +172,14 @@ blackbox::GlRenderer::GlRenderer(const FileIO& fileIO, Window& window)
     stbi_image_free(data);
 
     glEnable(GL_DEPTH_TEST);
+
+    const float3 direction
+    {
+        cos(glm::radians(cameraRotation.yaw)) * cos(glm::radians(cameraRotation.pitch)),
+        sin(glm::radians(cameraRotation.pitch)),
+        sin(glm::radians(cameraRotation.yaw)) * cos(glm::radians(cameraRotation.pitch))
+    };
+    cameraFront = glm::normalize(direction);
 }
 
 blackbox::GlRenderer::~GlRenderer()
@@ -143,15 +200,15 @@ void blackbox::GlRenderer::Draw()
     basicShader->SetFloat4("vertexColor", {0.0f, greenValue, 0.0f, 0.0f});
     basicShader->SetInt("texture1", 0);
     basicShader->SetInt("texture2", 1);
-    
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, float3(0.0f, 0.0f, -3.0f));
+
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    basicShader->SetMat4("view", view);
+
     glm::mat4 projection = glm::mat4(1.0f);
     projection = glm::perspective(glm::radians(65.0f), window.AspectRatio(), 0.1f, 100.f);
-    
-    basicShader->SetMat4("view", view);
     basicShader->SetMat4("projection", projection);
-    
+
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1);
     glActiveTexture(GL_TEXTURE1);
@@ -196,4 +253,52 @@ void blackbox::GlRenderer::SetRenderMode(const RenderMode mode) const
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         break;
     }
+}
+
+void blackbox::GlRenderer::MoveCamera(InputValue value)
+{
+    const float multiplier = 2.0f;
+    const float deltaTime = Engine.DeltaTime();
+    const float x = value.Get<float2>().x;
+    const float y = value.Get<float2>().y;
+
+    float3 direction {0.0f};
+    float3 right = glm::normalize(glm::cross(cameraFront, cameraUp));
+    
+    direction += x * cameraFront;
+    direction += y * right;
+
+    if (glm::length(direction) > 0.0f) {
+        direction = glm::normalize(direction);
+        cameraPos += direction * multiplier * deltaTime;
+    }
+}
+
+void blackbox::GlRenderer::MoveCameraUp(InputValue value)
+{
+    const float multiplier = 2.0f;
+    const float deltaTime = Engine.DeltaTime();
+    cameraPos += float3(0.0f, value.Get<float>() * multiplier * deltaTime, 0.0f);
+}
+
+void blackbox::GlRenderer::RotateCamera(InputValue value)
+{
+    if (!input.GetActionValue<ActivateCameraAction>().Get<bool>())
+    {
+        return;
+    }
+    
+    const float sensitivity = 0.35f;
+    float2 mouseDir = value.Get<float2>() * sensitivity;
+    cameraRotation.pitch += mouseDir.y;
+    cameraRotation.yaw += mouseDir.x;
+    cameraRotation.pitch = glm::clamp(cameraRotation.pitch, -89.0f, 89.0f);
+
+    const float3 direction
+    {
+        cos(glm::radians(cameraRotation.yaw)) * cos(glm::radians(cameraRotation.pitch)),
+        sin(glm::radians(cameraRotation.pitch)),
+        sin(glm::radians(cameraRotation.yaw)) * cos(glm::radians(cameraRotation.pitch))
+    };
+    cameraFront = glm::normalize(direction);
 }
