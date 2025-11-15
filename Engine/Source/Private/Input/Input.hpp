@@ -90,6 +90,9 @@ namespace blackbox
         template <typename T>
         [[nodiscard]] InputAction& GetAction();
 
+        template <typename T>
+        [[nodiscard]] InputValue GetActionValue();
+
         [[nodiscard]] float2 GetMousePosition() { return mousePosition; }
 
     private:
@@ -182,5 +185,14 @@ namespace blackbox
         }
 
         return *actions[type];
+    }
+
+    template <typename T>
+    InputValue Input::GetActionValue()
+    {
+        const auto type = std::type_index(typeid(T));
+        float2 value = CalculateActionValue(type);
+        float duration = actionDurations.contains(type) ? actionDurations[type] : 0.0f;
+        return InputValue(value, duration);
     }
 }

@@ -220,6 +220,7 @@ namespace blackbox
             // Ignored events //
             case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             case SDL_EVENT_WINDOW_SHOWN:
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
             case SDL_EVENT_CLIPBOARD_UPDATE:
             case SDL_EVENT_WINDOW_EXPOSED:
             case SDL_EVENT_WINDOW_DISPLAY_CHANGED:

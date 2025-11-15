@@ -12,8 +12,18 @@ namespace blackbox
     template <typename T>
     concept InputModifierType = std::is_base_of_v<InputModifier, T> && !std::is_same_v<InputModifier, T>;
     
-    struct Negate : InputModifier {
-        float2 Execute(const float2 value) override { return -value; }
+    struct Negate : InputModifier
+    {
+        bool x = false;
+        bool y = false;
+
+        Negate() : x(true), y(true) {}
+        Negate(const bool x, const bool y) : x(x), y(y) {}
+
+        float2 Execute(const float2 value) override
+        {
+            return value * -(float2(x, y) * 2.f - 1.f);
+        }
     };
 
     struct Swizzle : InputModifier

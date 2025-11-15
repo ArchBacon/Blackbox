@@ -8,6 +8,7 @@
 #include "DependencyInjection.hpp"
 #include "FileIO.hpp"
 #include "Window.hpp"
+#include "Graphics/GlRenderer.hpp"
 #include "Helpers/SDL3EventHelper.hpp"
 #include "Input/Input.hpp"
 
@@ -25,6 +26,7 @@ void blackbox::BlackboxEngine::Initialize()
     fileIO = container->Register<FileIO>();
     window = container->Register<Window, EventBus&>(1024, 576, "Blackbox", "Content/Icon64x64.bmp");
     input = container->Register<Input, EventBus&>();
+    renderer = container->Register<GlRenderer, FileIO&, Window&, Input&>();
 
     // Subscribe to events and assign callbacks
     eventbus->Subscribe<ShutdownEvent>(this, &BlackboxEngine::RequestShutdown);
@@ -34,6 +36,7 @@ void blackbox::BlackboxEngine::Initialize()
     eventbus->Subscribe<WindowFocusGainedEvent>(this, &BlackboxEngine::StartRendering);
 
     input->AddContext<EngineContext>();
+    input->AddContext<RenderContext>();
 }
 
 void blackbox::BlackboxEngine::Run()
@@ -44,6 +47,20 @@ void blackbox::BlackboxEngine::Run()
     // TODO: Move to editor play window once it's in, since this shouldn't be default for every project
     auto& exitEvent = input->GetAction<ExitEngineAction>();
     exitEvent.OnStarted(this, &BlackboxEngine::OnCloseAction);
+
+    auto& wireframeEvent = input->GetAction<WireframeMode>();
+    wireframeEvent.OnStarted([&](InputValue)
+    {
+        renderer->SetRenderMode(RenderMode::Wireframe);
+    });
+    
+    auto& fillEvent = input->GetAction<FillMode>();
+    fillEvent.OnStarted([&](InputValue)
+    {
+        renderer->SetRenderMode(RenderMode::Default);
+    });
+
+    
     
     while (isRunning)
     {
@@ -68,6 +85,8 @@ void blackbox::BlackboxEngine::Run()
         }
 
         eventbus->Broadcast(TickEvent{.deltaTime = deltaTime});
+        
+        renderer->Draw();
         window->SwapBuffers();
         
         frameNumber++;

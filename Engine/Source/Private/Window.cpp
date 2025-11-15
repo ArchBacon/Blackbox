@@ -74,6 +74,13 @@ void blackbox::Window::EnableVSync(const bool enabled) const
     SDL_GL_SetSwapInterval(enabled);
 }
 
+void blackbox::Window::KeepMouseCentered(const bool enabled) const
+{
+    SDL_SetWindowRelativeMouseMode(raw, enabled);
+    const SDL_Rect center = {.x = Width() / 2, .y = Height() / 2, .w = 1, .h = 1};
+    SDL_SetWindowMouseRect(raw, enabled ? &center : nullptr);
+}
+
 void blackbox::Window::OnWindowResized(const WindowResizedEvent event)
 {
     LogEngine->Info("Resized window from ({}, {}) -> ({}, {})", Width(), Height(), event.windowSize.x, event.windowSize.y);

@@ -85,6 +85,12 @@ namespace blackbox
                 actionDurations[keyBinding->actionType] = 0.0f;
             }
 
+            // Ensure the action exists
+            if (!actions.contains(keyBinding->actionType))
+            {
+                actions[keyBinding->actionType] = std::make_unique<InputAction>();
+            }
+
             const auto& action = actions[keyBinding->actionType];
             float2 value = CalculateActionValue(keyBinding->actionType);
             float duration = actionDurations[keyBinding->actionType];
@@ -116,6 +122,12 @@ namespace blackbox
             if (!contexts.contains(keyBinding->contextType))
             {
                 continue; // Key does not trigger if none of the corresponding context are active
+            }
+
+            // Ensure the action exists
+            if (!actions.contains(keyBinding->actionType))
+            {
+                actions[keyBinding->actionType] = std::make_unique<InputAction>();
             }
 
             const auto& action = actions[keyBinding->actionType];
@@ -177,6 +189,12 @@ namespace blackbox
                 actionDurations[keyBinding->actionType] = 0.0f;
             }
 
+            // Ensure the action exists
+            if (!actions.contains(keyBinding->actionType))
+            {
+                actions[keyBinding->actionType] = std::make_unique<InputAction>();
+            }
+
             const auto& action = actions[keyBinding->actionType];
             float2 value = CalculateActionValue(keyBinding->actionType);
             float duration = actionDurations[keyBinding->actionType];
@@ -208,6 +226,12 @@ namespace blackbox
             if (!contexts.contains(keyBinding->contextType))
             {
                 continue;
+            }
+
+            // Ensure the action exists
+            if (!actions.contains(keyBinding->actionType))
+            {
+                actions[keyBinding->actionType] = std::make_unique<InputAction>();
             }
 
             const auto& action = actions[keyBinding->actionType];
@@ -269,8 +293,21 @@ namespace blackbox
     float2 Input::CalculateActionValue(const std::type_index actionType)
     {
         float2 value = {0.0f, 0.0f};
+
+        // Check if this action has any keys bound
+        if (!actionKeys.contains(actionType))
+        {
+            return value;
+        }
+
         for (auto actionKey : actionKeys[actionType])
         {
+            // Check if this key has bindings
+            if (!keybinds.contains(actionKey))
+            {
+                continue;
+            }
+
             // Find the binding for this specific key to get its modifiers
             for (const auto& actionKeyBinding : keybinds.at(actionKey))
             {
@@ -305,6 +342,12 @@ namespace blackbox
                 continue;
             }
 
+            // Ensure the action exists
+            if (!actions.contains(keyBinding->actionType))
+            {
+                actions[keyBinding->actionType] = std::make_unique<InputAction>();
+            }
+
             auto& continuousState = continuousInputs[keyBinding->actionType];
             const auto& action = actions[keyBinding->actionType];
 
@@ -337,7 +380,7 @@ namespace blackbox
     // General
     void Input::ProcessHeldInputs(const TickEvent event)
     {
-        // Track which actions we've already updated this frame
+        // Track which actions we've already processed this frame
         std::unordered_set<std::type_index> processedActions;
 
         for (auto& key : pressedKeys)
@@ -354,20 +397,27 @@ namespace blackbox
                     continue; // Key does not trigger if none of the corresponding context are active
                 }
 
-                // Update action duration only once per frame
+                // Process each action only once per frame
                 if (!processedActions.contains(keyBinding->actionType))
                 {
                     actionDurations[keyBinding->actionType] += event.deltaTime;
+
+                    // Ensure the action exists
+                    if (!actions.contains(keyBinding->actionType))
+                    {
+                        actions[keyBinding->actionType] = std::make_unique<InputAction>();
+                    }
+
+                    const auto& action = actions[keyBinding->actionType];
+                    float2 value = CalculateActionValue(keyBinding->actionType);
+                    float duration = actionDurations[keyBinding->actionType];
+
+                    for (auto& callback : action->onTriggeredCallbacks)
+                    {
+                        callback(InputValue(value, duration));
+                    }
+
                     processedActions.insert(keyBinding->actionType);
-                }
-
-                const auto& action = actions[keyBinding->actionType];
-                float2 value = CalculateActionValue(keyBinding->actionType);
-                float duration = actionDurations[keyBinding->actionType];
-
-                for (auto& callback : action->onTriggeredCallbacks)
-                {
-                    callback(InputValue(value, duration));
                 }
             }
         }
@@ -388,6 +438,12 @@ namespace blackbox
             // Check if we've exceeded the debounce duration
             if (state.timeSinceLastInput >= CONTINUOUS_INPUT_DEBOUNCE)
             {
+                // Ensure the action exists
+                if (!actions.contains(actionType))
+                {
+                    actions[actionType] = std::make_unique<InputAction>();
+                }
+
                 const auto& action = actions[actionType];
                 for (auto& callback : action->onEndedCallbacks)
                 {
