@@ -36,6 +36,7 @@ void blackbox::BlackboxEngine::Initialize()
     eventbus->Subscribe<WindowFocusGainedEvent>(this, &BlackboxEngine::StartRendering);
 
     input->AddContext<EngineContext>();
+    input->AddContext<RenderContext>();
 }
 
 void blackbox::BlackboxEngine::Run()
@@ -46,6 +47,18 @@ void blackbox::BlackboxEngine::Run()
     // TODO: Move to editor play window once it's in, since this shouldn't be default for every project
     auto& exitEvent = input->GetAction<ExitEngineAction>();
     exitEvent.OnStarted(this, &BlackboxEngine::OnCloseAction);
+
+    auto& wireframeEvent = input->GetAction<WireframeMode>();
+    wireframeEvent.OnStarted([&](InputValue)
+    {
+        renderer->SetRenderMode(RenderMode::Wireframe);
+    });
+    
+    auto& fillEvent = input->GetAction<FillMode>();
+    fillEvent.OnStarted([&](InputValue)
+    {
+        renderer->SetRenderMode(RenderMode::Default);
+    });
     
     while (isRunning)
     {

@@ -26,6 +26,21 @@ namespace blackbox
             },
         }) {}
     };
+
+    struct WireframeMode {};
+    struct FillMode {};
+    struct RenderContext final : InputMappingContext<RenderContext>
+    {
+        // ReSharper disable once CppPossiblyUnintendedObjectSlicing
+        RenderContext() : InputMappingContext({
+            InputMapping<FillMode> {
+                {Keyboard::Num1},
+            },
+            InputMapping<WireframeMode> {
+                {Keyboard::Num2},
+            },
+        }) {}
+    };
     
     class BlackboxEngine
     {
