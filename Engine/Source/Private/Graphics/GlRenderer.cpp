@@ -63,10 +63,25 @@ blackbox::GlRenderer::GlRenderer(const FileIO& fileIO)
     
     // ============== TEXTURES ==============
     int32_t width, height, channels;
+    stbi_set_flip_vertically_on_load(true); 
     unsigned char* data = stbi_load("Content/ContainerWood.png", &width, &height, &channels, 4);
     
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA ,GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+    
+    data = stbi_load("Content/awesomeface.png", &width, &height, &channels, 4);
+    
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
@@ -94,8 +109,13 @@ void blackbox::GlRenderer::Draw()
     float timeValue = Engine.Uptime();
     float greenValue = glm::sin(timeValue) / 2.0f + 0.5f;
     basicShader->SetFloat4("vertexColor", {0.0f, greenValue, 0.0f, 0.0f});
+    basicShader->SetInt("texture1", 0);
+    basicShader->SetInt("texture2", 1);
 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }

@@ -16,7 +16,8 @@ namespace blackbox
     class GlRenderer
     {
         uint32_t VBO {}, VAO {}, EBO {};
-        uint32_t texture {};
+        uint32_t texture1 {};
+        uint32_t texture2 {};
         std::unique_ptr<Shader> basicShader {nullptr};
         
     public:
