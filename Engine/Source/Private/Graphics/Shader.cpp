@@ -3,6 +3,7 @@
 #include "Blackbox.hpp"
 #include "FileIO.hpp"
 #include "glad/glad.h"
+#include "glm/gtc/type_ptr.inl"
 
 blackbox::Shader::Shader(
     const FileIO& fileIO,
@@ -88,4 +89,9 @@ void blackbox::Shader::SetFloat(const std::string& name, const float value) cons
 void blackbox::Shader::SetFloat4(const std::string& name, const float4 value) const
 {
     glUniform4f(glGetUniformLocation(program, name.c_str()), value.x, value.y, value.z, value.w);
+}
+
+void blackbox::Shader::SetMat4(const std::string& name, glm::mat4 value) const
+{
+    glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }

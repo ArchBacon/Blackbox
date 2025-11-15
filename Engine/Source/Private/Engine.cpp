@@ -26,7 +26,7 @@ void blackbox::BlackboxEngine::Initialize()
     fileIO = container->Register<FileIO>();
     window = container->Register<Window, EventBus&>(1024, 576, "Blackbox", "Content/Icon64x64.bmp");
     input = container->Register<Input, EventBus&>();
-    renderer = container->Register<GlRenderer, FileIO&>();
+    renderer = container->Register<GlRenderer, FileIO&, Window&>();
 
     // Subscribe to events and assign callbacks
     eventbus->Subscribe<ShutdownEvent>(this, &BlackboxEngine::RequestShutdown);
