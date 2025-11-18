@@ -10,6 +10,10 @@
 
 namespace blackbox
 {
+    class Editor;
+}
+namespace blackbox
+{
     class Input;
     class Container;
     class Window;
@@ -50,6 +54,7 @@ namespace blackbox
         Window* window {nullptr};
         Input* input {nullptr};
         GlRenderer* renderer {nullptr};
+        Editor* editor {nullptr};
 
         bool stopRendering {false};
         bool isRunning {true};
@@ -67,11 +72,11 @@ namespace blackbox
         [[nodiscard]] float Uptime() const { return uptime; } // How long the engine has een running in seconds
         [[nodiscard]] uint32_t FrameNumber() const { return frameNumber; }
 
-    private:
         void RequestShutdown(const ShutdownEvent&) { isRunning = false; }
         void StopRendering(const Event&) { stopRendering = true; }
         void StartRendering(const Event&) { stopRendering = false; }
 
+    private:
         void OnCloseAction(InputValue value) { RequestShutdown({}); }
     };
 }
