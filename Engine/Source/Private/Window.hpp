@@ -15,6 +15,8 @@ namespace blackbox
     
     class Window
     {
+        friend class Editor;
+        
         SDL_Window* raw {nullptr};
         EventBus& eventbus;
         

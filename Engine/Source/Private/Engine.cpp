@@ -8,6 +8,7 @@
 #include "DependencyInjection.hpp"
 #include "FileIO.hpp"
 #include "Window.hpp"
+#include "Editor/Editor.hpp"
 #include "Graphics/GlRenderer.hpp"
 #include "Helpers/SDL3EventHelper.hpp"
 #include "Input/Input.hpp"
@@ -27,6 +28,7 @@ void blackbox::BlackboxEngine::Initialize()
     window = container->Register<Window, EventBus&>(1024, 576, "Blackbox", "Content/Icon64x64.bmp");
     input = container->Register<Input, EventBus&>();
     renderer = container->Register<GlRenderer, FileIO&, Window&, Input&>();
+    editor = container->Register<Editor, Window&>();
 
     // Subscribe to events and assign callbacks
     eventbus->Subscribe<ShutdownEvent>(this, &BlackboxEngine::RequestShutdown);
@@ -59,8 +61,6 @@ void blackbox::BlackboxEngine::Run()
     {
         renderer->SetRenderMode(RenderMode::Default);
     });
-
-    
     
     while (isRunning)
     {
@@ -73,6 +73,7 @@ void blackbox::BlackboxEngine::Run()
 
         while (SDL_PollEvent(&event))
         {
+            editor->HandleSDL3Event(event);
             SDL3ToBlackBoxEvent::Broadcast(event, *eventbus);
         }
 
@@ -85,8 +86,11 @@ void blackbox::BlackboxEngine::Run()
         }
 
         eventbus->Broadcast(TickEvent{.deltaTime = deltaTime});
-        
+
+        editor->StartFrame();
         renderer->Draw();
+        editor->Draw();
+        editor->EndFrame();
         window->SwapBuffers();
         
         frameNumber++;
